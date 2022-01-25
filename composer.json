@@ -10,14 +10,14 @@
   "repositories": [
     {
       "type": "vcs",
-      "url": "git://github.com/vovantune/eggheads-code-style"
+      "url": "git://github.com/EggheadsSolutions/eggheads-code-style"
     }
   ],
   "require": {
     "php": ">=8.0 || >=7.4"
   },
   "require-dev": {
-    "eggheads/eggheads-code-style": "^2.0"
+    "eggheads/eggheads-code-style": "^2.1"
   },
   "scripts": {
     "check": [
