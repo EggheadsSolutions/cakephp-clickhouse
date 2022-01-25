@@ -1,0 +1,6 @@
+/vendor/
+.idea
+/dev/php7/xdebug.log
+/dev/php8/xdebug.log
+composer.lock
+.phpcs-cache

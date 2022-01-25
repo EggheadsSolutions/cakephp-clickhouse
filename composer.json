@@ -1,0 +1,33 @@
+{
+  "name": "eggheads.solutions/cakephp-clickhouse",
+  "type": "library",
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {
+      "EggheadsSolutions\\CakephpClickHouse\\": "src/"
+    }
+  },
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "git://github.com/vovantune/eggheads-code-style"
+    }
+  ],
+  "require": {
+    "php": ">=8.0 || >=7.4"
+  },
+  "require-dev": {
+    "eggheads/eggheads-code-style": "^2.0"
+  },
+  "scripts": {
+    "check": [
+      "@cs-check",
+      "@phpmd-check",
+      "@phpstan-check"
+    ],
+    "cs-check": "phpcs --colors -p src/ tests/",
+    "cs-fix": "phpcbf --colors -p src/ tests/",
+    "phpmd-check": "vendor/bin/phpmd src/,tests/ text phpmd-ruleset.xml",
+    "phpstan-check": "vendor/bin/phpstan --configuration=phpstan.neon"
+  }
+}
