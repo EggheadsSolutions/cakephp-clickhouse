@@ -7,6 +7,9 @@
       "Eggheads\\CakephpClickHouse\\": "src/"
     }
   },
+  "config": {
+    "sort-packages": true
+  },
   "repositories": [
     {
       "type": "vcs",
@@ -14,9 +17,13 @@
     }
   ],
   "require": {
-    "php": ">=8.0 || >=7.4"
+    "php": ">=8.0 || >=7.4",
+    "ext-json": "*",
+    "smi2/phpclickhouse": "^1.4"
   },
   "require-dev": {
+    "cakephp/cakephp": "^4.3",
+    "cakephp/debug_kit": "^4.7",
     "eggheads/eggheads-code-style": "^2.1"
   },
   "scripts": {
