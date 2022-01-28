@@ -60,10 +60,6 @@ class ClickHouseTransaction
      */
     public function __construct(ClickHouse $clickHouse, string $tableName, array $schemaFieldNames)
     {
-        if (!defined('TMP')) {
-            define('TMP', '/tmp');
-        }
-
         $workDir = TMP . self::WORK_DIR;
         if (!is_dir($workDir) && !mkdir($workDir, 0755, true) && !is_dir($workDir)) {
             throw new LogicException(sprintf('Directory "%s" was not created', $workDir));

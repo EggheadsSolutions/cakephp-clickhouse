@@ -8,7 +8,7 @@ jobs:
         name: PHP Unit Tests
         runs-on: ubuntu-latest
         env:
-            extensions: bcmath, iconv, ctype, gd, mbstring, mysqli, pdo, pdo_mysql, sockets, zip, soap, intl, fileinfo, json, libxml, openssl, pcntl, posix, simplexml, zend-opcache, runkit7-3.1.0a1, igbinary, redis
+            extensions: bcmath, iconv, ctype, gd, mbstring, mysqli, pdo, pdo_mysql, sockets, zip, soap, intl, fileinfo, json, libxml, openssl, pcntl, posix, simplexml, zend-opcache, runkit7, igbinary, redis
             key: eggheads-clickhouse-v1
         strategy:
             matrix:

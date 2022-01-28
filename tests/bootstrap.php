@@ -11,3 +11,8 @@ define(
         'database' => env('clickhouse_database', 'default'),
     ]
 );
+
+if (!mkdir('tmp') && !is_dir('tmp')) {
+    throw new \RuntimeException(sprintf('Directory "%s" was not created', 'tmp'));
+}
+const TMP = __DIR__ . '/tmp';
