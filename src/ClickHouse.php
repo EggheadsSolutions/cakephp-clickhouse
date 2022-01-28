@@ -35,8 +35,6 @@ final class ClickHouse
      * Инициализация подключения к БД
      *
      * @param Client $clickHouse
-     * @phpstan-ignore-next-line
-     * @SuppressWarnings(PHPMD.MethodArgs)
      */
     public function __construct(Client $clickHouse)
     {

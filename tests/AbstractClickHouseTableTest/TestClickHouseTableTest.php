@@ -56,7 +56,7 @@ class TestClickHouseTableTest extends TestCase
     }
 
     /** @inerhitDoc */
-    protected function setUp(): void
+    public function setUp(): void
     {
         parent::setUp();
 

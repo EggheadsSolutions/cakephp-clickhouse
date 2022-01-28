@@ -13,6 +13,12 @@ class TestClickHouseTable extends AbstractClickHouseTable
     public const TABLE = 'testTable';
     public const WRITER_CONFIG = 'ssdNode';
 
+    /**
+     * @inerhitDoc
+     *
+     * @phpstan-ignore-next-line
+     * @SuppressWarnings(PHPMD.MethodArgs)
+     */
     protected function _getClickHouseConfig(string $profile): array
     {
         return CLICKHOUSE_CONFIG;

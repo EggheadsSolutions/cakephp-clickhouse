@@ -132,6 +132,11 @@ class ClickHouseTransaction
         return $this->_countData > 0;
     }
 
+    /**
+     * Кол-во добавленных строк
+     *
+     * @return int
+     */
     public function getCount(): int
     {
         return $this->_countData;
