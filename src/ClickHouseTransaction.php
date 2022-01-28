@@ -41,8 +41,11 @@ class ClickHouseTransaction
     /** @var string */
     private string $_filePath;
 
-    /** @var bool Были ли записаны данные */
-    private bool $_hasData = false;
+    /** @var int Кол-во добавленных строк */
+    private int $_countData = 0;
+
+    /** @var bool Было ли брошено исключение */
+    private bool $_hasException = false;
 
     /** @var ClickHouse */
     private ClickHouse $_clickHouse;
@@ -81,7 +84,7 @@ class ClickHouseTransaction
      */
     public function __destruct()
     {
-        if (!empty($this->_stream)) {
+        if (!empty($this->_stream) && $this->_hasException === false) {
             throw new LogicException('Данные не были отправлены в ClickHouse');
         }
     }
@@ -110,12 +113,13 @@ class ClickHouseTransaction
             }
         }
         if (empty($saveRow)) {
+            $this->_hasException = true;
             throw (new FieldNotFoundException('Не найдены поля'))
                 ->setContext(['saveData' => $data, 'fields' => $this->_schemaFields]);
         }
 
         fwrite($this->_stream, json_encode($saveRow, JSON_UNESCAPED_UNICODE) . PHP_EOL);
-        $this->_hasData = true;
+        $this->_countData++;
     }
 
     /**
@@ -125,7 +129,12 @@ class ClickHouseTransaction
      */
     public function hasData(): bool
     {
-        return $this->_hasData;
+        return $this->_countData > 0;
+    }
+
+    public function getCount(): int
+    {
+        return $this->_countData;
     }
 
     /**
@@ -140,7 +149,7 @@ class ClickHouseTransaction
         fclose($this->_stream);
         $this->_stream = null;
 
-        if (!$this->_hasData) {
+        if ($this->getCount() === 0) {
             unlink($this->_filePath);
             throw new LogicException('Пытаемся сохранить несуществующие данные');
         }
@@ -151,7 +160,7 @@ class ClickHouseTransaction
             try {
                 $result = $this->_clickHouse->getClient()->insertBatchFiles($this->_tableName, [$this->_filePath], $this->_saveFields, 'JSONEachRow');
                 $this->_stream = null;
-                $this->_hasData = false;
+                $this->_countData = 0;
                 unlink($this->_filePath);
 
                 return array_pop($result);
@@ -175,7 +184,7 @@ class ClickHouseTransaction
 
         fclose($this->_stream);
         $this->_stream = null;
-        $this->_hasData = false;
+        $this->_countData = 0;
         unlink($this->_filePath);
     }
 }

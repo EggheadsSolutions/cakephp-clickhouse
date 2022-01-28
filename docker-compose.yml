@@ -4,10 +4,18 @@ services:
     php8:
         build: dev/php8
         image: eggheads-php8
+        environment:
+            - clickhouse_host=clickhouse
         volumes:
             - .:/var/www/
     php7:
         build: dev/php7
         image: eggheads-php7
+        environment:
+            - clickhouse_host=clickhouse
         volumes:
             - .:/var/www/
+    clickhouse:
+        image: yandex/clickhouse-server
+#        ports:
+#            - "8823:8123"

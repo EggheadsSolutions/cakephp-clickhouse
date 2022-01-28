@@ -34,15 +34,12 @@ final class ClickHouse
     /**
      * Инициализация подключения к БД
      *
-     * @param array $connectParams
+     * @param Client $clickHouse
      * @phpstan-ignore-next-line
      * @SuppressWarnings(PHPMD.MethodArgs)
      */
-    private function __construct(array $connectParams)
+    public function __construct(Client $clickHouse)
     {
-        $clickHouse = new Client($connectParams);
-        $clickHouse->database($connectParams['database']);
-
         if ($this->_isCli()) {
             $timeout = self::TIMEOUT * 10;
         } else {
@@ -57,16 +54,6 @@ final class ClickHouse
     }
 
     /**
-     * Проверка, что запуск в консольной среде
-     *
-     * @return bool
-     */
-    private function _isCli(): bool
-    {
-        return PHP_SAPI === 'cli';
-    }
-
-    /**
      * Возвращает объект-одиночку
      *
      * @param string|null $profile
@@ -75,10 +62,13 @@ final class ClickHouse
      * @phpstan-ignore-next-line
      * @SuppressWarnings(PHPMD.MethodArgs)
      */
-    public static function getInstance(string $profile, array $connectParams): self
+    public static function getInstance(string $profile, array $connectParams = []): self
     {
         if (empty(self::$_instance[$profile])) {
-            self::$_instance[$profile] = new self($connectParams);
+            $clickHouse = new Client($connectParams);
+            $clickHouse->database($connectParams['database']);
+
+            self::$_instance[$profile] = new self($clickHouse);
         }
 
         return self::$_instance[$profile];
@@ -120,6 +110,16 @@ final class ClickHouse
     private function _isDebug(): bool
     {
         return Configure::read('debug', false);
+    }
+
+    /**
+     * Проверка, что запуск в консольной среде
+     *
+     * @return bool
+     */
+    private function _isCli(): bool
+    {
+        return PHP_SAPI === 'cli';
     }
 
     /**
