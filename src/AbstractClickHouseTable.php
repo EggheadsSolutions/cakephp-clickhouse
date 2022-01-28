@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Eggheads\CakephpClickHouse;
 
 use Cake\Cache\Cache;
-use Cake\I18n\I18nDateTimeInterface;
+use Cake\Chronos\ChronosInterface;
 use ClickHouseDB\Statement;
 use LogicException;
 use OutOfBoundsException;
@@ -217,11 +217,11 @@ abstract class AbstractClickHouseTable
     /**
      * Есть ли данные на текущую дату
      *
-     * @param I18nDateTimeInterface $workDate
+     * @param ChronosInterface $workDate
      * @param string $dateColumn Поле с датой
      * @return bool
      */
-    public function hasData(I18nDateTimeInterface $workDate, string $dateColumn = 'checkDate'): bool
+    public function hasData(ChronosInterface $workDate, string $dateColumn = 'checkDate'): bool
     {
         return (bool)$this->getTotal($workDate, $dateColumn);
     }
@@ -229,11 +229,11 @@ abstract class AbstractClickHouseTable
     /**
      * Получаем общее кол-во записей на определённую дату
      *
-     * @param I18nDateTimeInterface $workDate
+     * @param ChronosInterface $workDate
      * @param string $dateColumn
      * @return int
      */
-    public function getTotal(I18nDateTimeInterface $workDate, string $dateColumn = 'checkDate'): int
+    public function getTotal(ChronosInterface $workDate, string $dateColumn = 'checkDate'): int
     {
         return (int)$this->_getWriter()
             ->select(
