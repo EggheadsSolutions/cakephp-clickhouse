@@ -7,6 +7,11 @@
       "Eggheads\\CakephpClickHouse\\": "src/"
     }
   },
+  "autoload-dev": {
+    "psr-4": {
+      "Eggheads\\CakephpClickHouse\\Tests\\": "tests/"
+    }
+  },
   "config": {
     "sort-packages": true
   },
@@ -24,7 +29,8 @@
   "require-dev": {
     "cakephp/cakephp": "^4.3",
     "cakephp/debug_kit": "^4.7",
-    "eggheads/eggheads-code-style": "^2.1"
+    "eggheads/eggheads-code-style": "^2.1",
+    "phpunit/phpunit": "^9.5"
   },
   "scripts": {
     "check": [
@@ -35,6 +41,7 @@
     "cs-check": "phpcs --colors -p src/ tests/",
     "cs-fix": "phpcbf --colors -p src/ tests/",
     "phpmd-check": "vendor/bin/phpmd src/,tests/ text phpmd-ruleset.xml",
-    "phpstan-check": "vendor/bin/phpstan --configuration=phpstan.neon"
+    "phpstan-check": "vendor/bin/phpstan --configuration=phpstan.neon",
+    "test": "vendor/bin/phpunit --colors=always"
   }
 }
