@@ -19,6 +19,10 @@
     {
       "type": "vcs",
       "url": "git://github.com/EggheadsSolutions/eggheads-code-style"
+    },
+    {
+      "type": "vcs",
+      "url": "git@github.com:EggheadsSolutions/runkit-test-mocks.git"
     }
   ],
   "require": {
@@ -31,6 +35,9 @@
     "cakephp/debug_kit": "^4.7",
     "eggheads/eggheads-code-style": "^2.1",
     "phpunit/phpunit": "^9.5"
+  },
+  "suggest": {
+    "eggheads/mocks": "Для удобства тестирования (создания моков ClickHouse) в проекте"
   },
   "scripts": {
     "check": [
