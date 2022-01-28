@@ -5,7 +5,7 @@ on: [ pull_request ]
 
 jobs:
     php-standart-check:
-        name: PHP Coding Standard
+        name: PHP Unit Tests
         runs-on: ubuntu-latest
         env:
             extensions: bcmath, iconv, ctype, gd, mbstring, mysqli, pdo, pdo_mysql, sockets, zip, soap, intl, fileinfo, json, libxml, openssl, pcntl, posix, simplexml, zend-opcache, runkit7-3.1.0a1, igbinary, redis
