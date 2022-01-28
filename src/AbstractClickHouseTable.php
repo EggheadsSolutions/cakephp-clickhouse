@@ -173,7 +173,7 @@ abstract class AbstractClickHouseTable
     {
         return ClickHouse::getInstance(
             static::WRITER_CONFIG,
-            $this->_getClickHouseConfig(static::READER_CONFIG)
+            $this->_getClickHouseConfig(static::WRITER_CONFIG)
         );
     }
 
