@@ -48,12 +48,12 @@ class ClickHouseTransactionTest extends TestCase
         }
 
         self::assertTrue($transaction->hasData());
-        self::assertEquals(2, $transaction->getCount());
+        self::assertEquals(2, $transaction->count());
 
         $transaction->commit();
 
         self::assertFalse($transaction->hasData());
-        self::assertEquals(0, $transaction->getCount());
+        self::assertCount(0, $transaction);
         self::assertEquals(
             [
                 [
@@ -117,10 +117,10 @@ class ClickHouseTransactionTest extends TestCase
         /** @var MockObject|ClickHouseTransaction $chTransaction */
         $chTransaction = $this->getMockBuilder(ClickHouseTransaction::class)
             ->setConstructorArgs([new ClickHouse($stubClient), self::TABLE, []])
-            ->onlyMethods(['getCount'])
+            ->onlyMethods(['count'])
             ->getMock();
 
-        $chTransaction->method('getCount')->willReturn(1);
+        $chTransaction->method('count')->willReturn(1);
 
         $chTransaction->commit();
     }

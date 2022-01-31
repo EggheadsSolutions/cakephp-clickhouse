@@ -5,6 +5,7 @@ namespace Eggheads\CakephpClickHouse;
 
 use Cake\Log\Log;
 use ClickHouseDB\Statement;
+use Countable;
 use Eggheads\CakephpClickHouse\Exception\FieldNotFoundException;
 use Exception;
 use LogicException;
@@ -13,7 +14,7 @@ use LogicException;
  * Аналог транзакции через отправку CSV файла.
  * Позволяет писать огромные данные
  */
-class ClickHouseTransaction
+class ClickHouseTransaction implements Countable
 {
     private const WORK_DIR = 'clickHouse';
 
@@ -133,7 +134,7 @@ class ClickHouseTransaction
      *
      * @return int
      */
-    public function getCount(): int
+    public function count(): int
     {
         return $this->_countData;
     }
@@ -144,13 +145,14 @@ class ClickHouseTransaction
      * @return Statement
      * @throws LogicException
      * @throws Exception
+     * @noinspection PhpInconsistentReturnPointsInspection
      */
     public function commit(): Statement
     {
         fclose($this->_stream);
         $this->_stream = null;
 
-        if ($this->getCount() === 0) {
+        if ($this->count() === 0) {
             unlink($this->_filePath);
             throw new LogicException('Пытаемся сохранить несуществующие данные');
         }
