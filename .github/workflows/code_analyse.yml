@@ -10,8 +10,6 @@ jobs:
         strategy:
             matrix:
                 php-versions: [ '7.4', '8.0' ]
-        env:
-            extensions: bcmath, iconv, ctype, gd, mbstring, mysqli, pdo, pdo_mysql, sockets, zip, soap, intl, fileinfo, json, libxml, openssl, pcntl, posix, simplexml, zend-opcache, runkit7, igbinary, redis
         steps:
             -   uses: EggheadsSolutions/php-standart-check@v1
                 with:

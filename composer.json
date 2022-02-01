@@ -7,27 +7,49 @@
       "Eggheads\\CakephpClickHouse\\": "src/"
     }
   },
+  "autoload-dev": {
+    "psr-4": {
+      "Eggheads\\CakephpClickHouse\\Tests\\": "tests/"
+    }
+  },
+  "config": {
+    "sort-packages": true
+  },
   "repositories": [
     {
       "type": "vcs",
       "url": "git://github.com/EggheadsSolutions/eggheads-code-style"
+    },
+    {
+      "type": "vcs",
+      "url": "git@github.com:EggheadsSolutions/runkit-test-mocks.git"
     }
   ],
   "require": {
-    "php": ">=8.0 || >=7.4"
+    "php": ">=8.0 || >=7.4",
+    "ext-json": "*",
+    "smi2/phpclickhouse": "^1.4"
   },
   "require-dev": {
-    "eggheads/eggheads-code-style": "^2.1"
+    "cakephp/cakephp": "^4.3",
+    "cakephp/debug_kit": "^4.7",
+    "eggheads/eggheads-code-style": "^2.1",
+    "phpunit/phpunit": "^9.5"
+  },
+  "suggest": {
+    "eggheads/mocks": "Для удобства тестирования (создания моков ClickHouse) в проекте"
   },
   "scripts": {
     "check": [
       "@cs-check",
       "@phpmd-check",
-      "@phpstan-check"
+      "@phpstan-check",
+      "@test"
     ],
     "cs-check": "phpcs --colors -p src/ tests/",
     "cs-fix": "phpcbf --colors -p src/ tests/",
     "phpmd-check": "vendor/bin/phpmd src/,tests/ text phpmd-ruleset.xml",
-    "phpstan-check": "vendor/bin/phpstan --configuration=phpstan.neon"
+    "phpstan-check": "vendor/bin/phpstan --configuration=phpstan.neon",
+    "test": "vendor/bin/phpunit --colors=always"
   }
 }

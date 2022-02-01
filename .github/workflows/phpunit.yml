@@ -1,0 +1,54 @@
+name: CI
+
+# Controls when the action will run.
+on: [ pull_request ]
+
+jobs:
+    php-standart-check:
+        name: PHP Unit Tests
+        runs-on: ubuntu-latest
+        env:
+            extensions: bcmath, iconv, ctype, gd, mbstring, mysqli, pdo, pdo_mysql, sockets, zip, soap, intl, fileinfo, json, libxml, openssl, pcntl, posix, simplexml, zend-opcache, runkit7, igbinary, redis
+            key: eggheads-clickhouse-v1
+        strategy:
+            matrix:
+                php-versions: [ '7.4', '8.0' ]
+        steps:
+            -   uses: actions/checkout@v2
+            -   uses: EpicStep/clickhouse-github-action@v1.0.0
+
+            -   name: Setup cache environment
+                id: extcache
+                uses: shivammathur/cache-extensions@v1
+                with:
+                    php-version: ${{ matrix.php-versions }}
+                    extensions: ${{ env.extensions }}
+                    key: ${{ env.key }}
+
+            -   name: Cache extensions
+                uses: actions/cache@v2
+                with:
+                    path: ${{ steps.extcache.outputs.dir }}
+                    key: ${{ steps.extcache.outputs.key }}
+                    restore-keys: ${{ steps.extcache.outputs.key }}
+
+            -   name: Setup PHP
+                uses: shivammathur/setup-php@v2
+                with:
+                    php-version: ${{ matrix.php-versions }}
+                    extensions: ${{ env.extensions }}
+
+            -   name: Cache Composer packages
+                id: composer-cache
+                uses: actions/cache@v2
+                with:
+                    path: vendor
+                    key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+                    restore-keys: |
+                        ${{ runner.os }}-php-
+
+            -   name: Install dependencies
+                run: composer install --no-progress --prefer-dist --optimize-autoloader
+
+            -   name: PHPUnit
+                run: php -dxdebug.mode=develop vendor/bin/phpunit
