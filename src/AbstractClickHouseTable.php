@@ -40,10 +40,10 @@ abstract class AbstractClickHouseTable
     protected function __construct()
     {
         if (empty(static::TABLE)) {
-            throw new LogicException("Не задана константа TABLE для класса " . static::class);
+            throw new LogicException('Не задана константа TABLE для класса ' . static::class);
         }
         if (empty(static::WRITER_CONFIG)) {
-            throw new LogicException("Не задана константа WRITER_CONFIG для класса " . static::class);
+            throw new LogicException('Не задана константа WRITER_CONFIG для класса ' . static::class);
         }
     }
 
@@ -77,7 +77,7 @@ abstract class AbstractClickHouseTable
             return $inFieldName;
         } else {
             if (empty($schema[$defaultField])) {
-                throw new OutOfBoundsException('Поле $defaultField не найдено в таблице ' . static::TABLE);
+                throw new OutOfBoundsException("Поле $defaultField не найдено в таблице " . static::TABLE);
             }
             return $defaultField;
         }

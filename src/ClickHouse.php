@@ -84,7 +84,7 @@ final class ClickHouse
     }
 
     /**
-     * Проброс select, дабы кол-во уменьшить вложенности
+     * Проброс select, дабы уменьшить кол-во вложенности
      *
      * @param string $sql
      * @param array<string,string|int|float|string[]|int[]|float[]> $bindings

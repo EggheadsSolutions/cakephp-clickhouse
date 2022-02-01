@@ -37,7 +37,7 @@ class ClickHouseTransaction implements Countable
     /** @var string[] Список сохраненных файлов */
     private array $_saveFields = [];
 
-    /** @var ?resource Ссылка на открызый файл */
+    /** @var ?resource Ссылка на открытый файл */
     private $_stream;
 
     /** @var string Путь к файлу для хранения данных транзакции */
