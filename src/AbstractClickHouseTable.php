@@ -123,22 +123,8 @@ abstract class AbstractClickHouseTable
      */
     protected function _getReader(): ClickHouse
     {
-        return ClickHouse::getInstance(
-            static::READER_CONFIG,
-            $this->_getClickHouseConfig(static::READER_CONFIG)
-        );
+        return ClickHouse::getInstance(static::READER_CONFIG);
     }
-
-    /**
-     * Получение настроек для подключения ClickHouse
-     *
-     * @param string $profile
-     * @return array
-     *
-     * @phpstan-ignore-next-line
-     * @SuppressWarnings(PHPMD.MethodArgs)
-     */
-    abstract protected function _getClickHouseConfig(string $profile): array;
 
     /**
      * Проверяем варианты сортировки
@@ -171,10 +157,7 @@ abstract class AbstractClickHouseTable
      */
     protected function _getWriter(): ClickHouse
     {
-        return ClickHouse::getInstance(
-            static::WRITER_CONFIG,
-            $this->_getClickHouseConfig(static::WRITER_CONFIG)
-        );
+        return ClickHouse::getInstance(static::WRITER_CONFIG);
     }
 
     /**

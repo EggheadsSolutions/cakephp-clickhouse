@@ -4,3 +4,4 @@
 /dev/php8/xdebug.log
 composer.lock
 .phpcs-cache
+/tmp

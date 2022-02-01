@@ -19,7 +19,7 @@ class ClickHouseTransactionTest extends TestCase
     private const TABLE = 'testTransaction';
 
     /** Название профиля подключения ClickHouse */
-    private const CH_PROFILE = 'test';
+    private const CH_PROFILE = 'writer';
 
     /**
      * @testdox Проверим пакетную вставку
@@ -130,7 +130,7 @@ class ClickHouseTransactionTest extends TestCase
     {
         parent::setUp();
 
-        $writer = ClickHouse::getInstance(self::CH_PROFILE, CLICKHOUSE_CONFIG);
+        $writer = ClickHouse::getInstance(self::CH_PROFILE);
         $writer->getClient()->write('DROP TABLE IF EXISTS {table}', ['table' => self::TABLE]);
         $writer->getClient()->write(
             "CREATE TABLE {table}

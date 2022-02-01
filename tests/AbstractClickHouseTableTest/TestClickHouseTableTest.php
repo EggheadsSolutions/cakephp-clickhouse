@@ -20,10 +20,10 @@ class TestClickHouseTableTest extends TestCase
         $testTable = TestClickHouseTable::getInstance();
         $schema = $testTable->getSchema();
         self::assertEquals([
-            "id" => "String",
-            "url" => "String",
-            "data" => "Decimal(10, 2)",
-            "created" => "DateTime",
+            'id' => 'String',
+            'url' => 'String',
+            'data' => 'Decimal(10, 2)',
+            'created' => 'DateTime',
         ], $schema);
 
         $testTable->truncate();
@@ -60,16 +60,16 @@ class TestClickHouseTableTest extends TestCase
     {
         parent::setUp();
 
-        $writer = ClickHouse::getInstance(TestClickHouseTable::READER_CONFIG, CLICKHOUSE_CONFIG);
+        $writer = ClickHouse::getInstance('writer');
         $writer->getClient()->write('DROP TABLE IF EXISTS {table}', ['table' => TestClickHouseTable::TABLE]);
         $writer->getClient()->write(
-            "CREATE TABLE {table}
+            'CREATE TABLE {table}
             (
                 id      String,
                 url     String,
                 data    Decimal(10, 2),
                 created DateTime
-            ) ENGINE = MergeTree() ORDER BY id",
+            ) ENGINE = MergeTree() ORDER BY id',
             ['table' => TestClickHouseTable::TABLE]
         );
 

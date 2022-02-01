@@ -10,17 +10,8 @@ use Eggheads\CakephpClickHouse\AbstractClickHouseTable;
  */
 class TestClickHouseTable extends AbstractClickHouseTable
 {
+    /** @inerhitDoc */
     public const TABLE = 'testTable';
+    /** @inerhitDoc */
     public const WRITER_CONFIG = 'ssdNode';
-
-    /**
-     * @inerhitDoc
-     *
-     * @phpstan-ignore-next-line
-     * @SuppressWarnings(PHPMD.MethodArgs)
-     */
-    protected function _getClickHouseConfig(string $profile): array
-    {
-        return CLICKHOUSE_CONFIG;
-    }
 }

@@ -13,13 +13,18 @@ use RuntimeException;
 
 final class ClickHouse
 {
+    /** Время ожидания для web запросов */
     public const TIMEOUT = 150;
 
-    /** @var string[] Возвращаемое значение поля с типом Date если его значение не указано в ClickHouse */
+    /** Время ожидания для консольных скриптов */
+    public const CLI_TIMEOUT = 1500;
+
+    /** @var string[] Возвращаемое значение поля с типом Date, если его значение не указано в ClickHouse */
     public const EMPTY_DATE = ['1970-01-01', '0000-00-00'];
 
-    /** @var string[] Возвращаемое значение поля с типом DateTime если его значение не указано в ClickHouse */
+    /** @var string[] Возвращаемое значение поля с типом DateTime, если его значение не указано в ClickHouse */
     public const EMPTY_DATE_TIME = ['1970-01-01 00:00:00', '0000-00-00 00:00:00'];
+
     /**
      * Объект-одиночка
      *
@@ -27,6 +32,8 @@ final class ClickHouse
      */
     private static array $_instance = [];
     /**
+     * Инстанс клиента
+     *
      * @var null|Client
      */
     private ?Client $_client;
@@ -38,11 +45,7 @@ final class ClickHouse
      */
     public function __construct(Client $clickHouse)
     {
-        if ($this->_isCli()) {
-            $timeout = self::TIMEOUT * 10;
-        } else {
-            $timeout = self::TIMEOUT;
-        }
+        $timeout = $this->_isCli() ? self::CLI_TIMEOUT : self::TIMEOUT;
 
         $clickHouse->setTimeout($timeout);
         $clickHouse->setConnectTimeOut($timeout);
@@ -54,15 +57,23 @@ final class ClickHouse
     /**
      * Возвращает объект-одиночку
      *
-     * @param string|null $profile
-     * @param array $connectParams
+     * @param string $profile
      * @return self
-     * @phpstan-ignore-next-line
-     * @SuppressWarnings(PHPMD.MethodArgs)
      */
-    public static function getInstance(string $profile, array $connectParams = []): self
+    public static function getInstance(string $profile = 'default'): self
     {
         if (empty(self::$_instance[$profile])) {
+            if ($profile === 'default') {
+                $connectParams = Configure::read('clickHouseServer', []);
+            } else {
+                $writers = Configure::read('clickHouseWriters', []);
+                if (empty($writers[$profile])) {
+                    throw new RuntimeException("Profile $profile is not configured");
+                }
+
+                $connectParams = $writers[$profile];
+            }
+
             $clickHouse = new Client($connectParams);
             $clickHouse->database($connectParams['database']);
 
@@ -73,7 +84,7 @@ final class ClickHouse
     }
 
     /**
-     * Проброс select, дабы кол-во уменьшить вложенность
+     * Проброс select, дабы кол-во уменьшить вложенности
      *
      * @param string $sql
      * @param array<string,string|int|float|string[]|int[]|float[]> $bindings
@@ -101,13 +112,13 @@ final class ClickHouse
     }
 
     /**
-     * Включен ли режим отладки
+     * Включён ли режим отладки
      *
      * @return bool
      */
     private function _isDebug(): bool
     {
-        return Configure::read('debug', false);
+        return Configure::read('debug', true);
     }
 
     /**

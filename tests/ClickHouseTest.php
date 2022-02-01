@@ -16,19 +16,19 @@ class ClickHouseTest extends TestCase
      */
     public function testGetInstances(): void
     {
-        $default = ClickHouse::getInstance('reader', CLICKHOUSE_CONFIG);
+        $default = ClickHouse::getInstance();
         self::assertEquals(CLICKHOUSE_CONFIG['host'], $default->getClient()->getConnectHost());
         self::assertEquals(CLICKHOUSE_CONFIG['database'], $default->getClient()->settings()->getDatabase());
 
         self::assertTrue($default->getClient()->ping());
 
-        $writer = ClickHouse::getInstance('writer', CLICKHOUSE_CONFIG);
+        $writer = ClickHouse::getInstance('writer');
         self::assertEquals(CLICKHOUSE_CONFIG['host'], $writer->getClient()->getConnectHost());
         self::assertEquals(CLICKHOUSE_CONFIG['database'], $writer->getClient()->settings()->getDatabase());
         self::assertTrue($writer->getClient()->ping());
 
         // второй экземпляр берётся из кеша
-        $default2 = ClickHouse::getInstance('reader');
+        $default2 = ClickHouse::getInstance();
         self::assertEquals($default->getClient()->getConnectHost(), $default2->getClient()->getConnectHost());
         self::assertEquals($default->getClient()->settings()->getDatabase(), $default2->getClient()->settings()->getDatabase());
 

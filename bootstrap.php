@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+use Cake\Core\Configure;
+
 define(
     'CLICKHOUSE_CONFIG',
     [
@@ -12,4 +14,13 @@ define(
     ]
 );
 
-define('TMP', __DIR__ . '/tmp');
+define('TMP', __DIR__ . '/../tmp/');
+
+Configure::write('clickHouseServer', CLICKHOUSE_CONFIG);
+Configure::write(
+    'clickHouseWriters',
+    [
+        'writer' => CLICKHOUSE_CONFIG,
+        'ssdNode' => CLICKHOUSE_CONFIG,
+    ]
+);

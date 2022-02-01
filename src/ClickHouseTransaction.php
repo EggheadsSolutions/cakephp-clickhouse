@@ -16,6 +16,7 @@ use LogicException;
  */
 class ClickHouseTransaction implements Countable
 {
+    /** Рабочая директория для файлов транзакции */
     private const WORK_DIR = 'clickHouse';
 
     /** @var string Ошибка CH, при которой делать повторную попытку */
@@ -27,19 +28,19 @@ class ClickHouseTransaction implements Countable
     /** @var int Секунд ожидания */
     public const BAD_ATTEMPT_WAIT_SECONDS = 30;
 
-    /** @var string */
+    /** @var string Название таблицы */
     private string $_tableName;
 
-    /** @var string[] */
+    /** @var string[] Список полей для сохранения */
     private array $_schemaFields;
 
-    /** @var string[] */
+    /** @var string[] Список сохраненных файлов */
     private array $_saveFields = [];
 
-    /** @var ?resource */
+    /** @var ?resource Ссылка на открызый файл */
     private $_stream;
 
-    /** @var string */
+    /** @var string Путь к файлу для хранения данных транзакции */
     private string $_filePath;
 
     /** @var int Кол-во добавленных строк */
@@ -48,7 +49,7 @@ class ClickHouseTransaction implements Countable
     /** @var bool Было ли брошено исключение */
     private bool $_hasException = false;
 
-    /** @var ClickHouse */
+    /** @var ClickHouse Инстанс клиента */
     private ClickHouse $_clickHouse;
 
     /**
