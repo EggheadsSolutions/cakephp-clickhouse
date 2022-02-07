@@ -1,16 +1,16 @@
-name: CI
+name: Code Analyze
 
 # Controls when the action will run.
 on: [ pull_request ]
 
 jobs:
-    php-standart-check:
-        name: PHP Coding Standard
-        runs-on: ubuntu-latest
-        strategy:
-            matrix:
-                php-versions: [ '7.4', '8.0' ]
-        steps:
-            -   uses: EggheadsSolutions/php-standart-check@v1
-                with:
-                    php-version: ${{ matrix.php-versions }}
+  php-standart-check:
+    name: PHP Coding Standard
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+          php-versions: [ '7.4', '8.0' ]
+      steps:
+        - uses: EggheadsSolutions/php-standart-check@v1
+          with:
+            php-version: ${{ matrix.php-versions }}
