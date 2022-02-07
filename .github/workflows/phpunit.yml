@@ -16,5 +16,6 @@ jobs:
           php-version: ${{ matrix.php-versions }}
           mysql: no
           redis: no
+          public-project: yes
           app-local-php: no
           post-install-cmd: no
