@@ -1,5 +1,5 @@
 {
-  "name": "eggheads.solutions/cakephp-clickhouse",
+  "name": "eggheads/cakephp-clickhouse",
   "type": "library",
   "license": "MIT",
   "autoload": {
