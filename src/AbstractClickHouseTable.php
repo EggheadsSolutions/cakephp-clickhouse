@@ -16,6 +16,9 @@ use RuntimeException;
  */
 abstract class AbstractClickHouseTable
 {
+    /** @var int Сколько секунд ждать между проверками на выполнение мутации */
+    private const WAIT_MUTATIONS_TIMEOUT = 5;
+
     /** @var string Имя таблицы в БД */
     public const TABLE = '';
     /** @var string Название конфигурации для чтения */
@@ -32,8 +35,6 @@ abstract class AbstractClickHouseTable
     private static $_instances = [];
     /** @var null|array<string, string> Схема таблицы ['имя поля' => 'тип'] */
     private ?array $_schema = null;
-    /** @var int Сколько секунд ждать между проверками на выполнение мутации */
-    private int $_waitMutationTimeout = 5;
 
     /**
      * AbstractClickHouseTable constructor.
@@ -241,9 +242,9 @@ abstract class AbstractClickHouseTable
     public function deleteAllSync(string $conditions): void
     {
         $this->deleteAll($conditions);
-        sleep($this->_waitMutationTimeout);
+        sleep(self::WAIT_MUTATIONS_TIMEOUT);
         while ($this->hasMutations()) {
-            sleep($this->_waitMutationTimeout);
+            sleep(self::WAIT_MUTATIONS_TIMEOUT);
         }
     }
 
