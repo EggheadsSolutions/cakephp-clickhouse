@@ -254,7 +254,7 @@ abstract class AbstractClickHouseTable
      */
     public function hasMutations(): bool
     {
-        return (int)$this->_getWriter()
+        return $this->_getWriter()
                 ->select(
                     'SELECT count() cnt FROM system.mutations WHERE database=:writerDB AND table=:table AND is_done=0',
                     [
