@@ -5,6 +5,7 @@ namespace Eggheads\CakephpClickHouse;
 
 use Cake\Cache\Cache;
 use Cake\Chronos\ChronosInterface;
+use Cake\I18n\FrozenDate;
 use ClickHouseDB\Statement;
 use LogicException;
 use OutOfBoundsException;
@@ -31,6 +32,8 @@ abstract class AbstractClickHouseTable
     private static $_instances = [];
     /** @var null|array<string, string> Схема таблицы ['имя поля' => 'тип'] */
     private ?array $_schema = null;
+    /** @var int Сколько секунд ждать между проверками на выполнение мутации */
+    private int $_waitMutationTimeout = 5;
 
     /**
      * AbstractClickHouseTable constructor.
@@ -227,6 +230,54 @@ abstract class AbstractClickHouseTable
                     'workDateString' => $workDate->toDateString(),
                 ]
             )->fetchOne('cnt');
+    }
+
+    /**
+     * Удаляем данные и удостоверяемся о завершении всех мутаций
+     *
+     * @param string $conditions
+     * @return void
+     */
+    public function deleteAllSync(string $conditions): void
+    {
+        $this->deleteAll($conditions);
+        sleep($this->_waitMutationTimeout);
+        while ($this->hasMutations()) {
+            sleep($this->_waitMutationTimeout);
+        }
+    }
+
+    /**
+     * Проверяем, есть ли у таблицы мутации на текущий момент
+     *
+     * @return bool
+     */
+    public function hasMutations(): bool
+    {
+        return (int)$this->_getWriter()
+                ->select(
+                    'SELECT count() cnt FROM system.mutations WHERE database=:writerDB AND table=:table AND is_done=0',
+                    [
+                        'writerDB' => $this->_getWriter()->getClient()->settings()->getDatabase(),
+                        'table' => static::TABLE,
+                    ]
+                )->fetchOne('cnt') > 0;
+    }
+
+    /**
+     * Получаю максимальную дату наличия записей
+     *
+     * @param string $dateColumn
+     * @return FrozenDate|null
+     */
+    public function getMaxDate(string $dateColumn = 'checkDate'): ?FrozenDate
+    {
+        $maxDate = $this->select(
+            'SELECT if(toYear(max({dateColumn})) > 2000, max({dateColumn}), null) maxDate FROM {table}',
+            ['table' => static::TABLE, 'dateColumn' => $dateColumn]
+        )
+            ->fetchOne('maxDate');
+        return !empty($maxDate) ? FrozenDate::parse($maxDate) : null;
     }
 
     /**
