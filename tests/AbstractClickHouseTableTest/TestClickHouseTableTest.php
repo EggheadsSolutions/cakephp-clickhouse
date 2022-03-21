@@ -92,6 +92,17 @@ class TestClickHouseTableTest extends TestCase
         self::assertEmpty($testTable->select($selectAllQuery)->rows());
     }
 
+    /**
+     * Тестируем getFullTableName
+     *
+     * @return void
+     * @see AbstractClickHouseTable::getFullTableName()
+     */
+    public function testGetFullTableName(): void
+    {
+        self::assertEquals('default.testTable', TestClickHouseTable::getInstance()->getFullTableName());
+    }
+
     /** @inerhitDoc */
     public function setUp(): void
     {

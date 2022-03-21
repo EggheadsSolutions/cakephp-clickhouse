@@ -282,6 +282,18 @@ abstract class AbstractClickHouseTable
     }
 
     /**
+     * Получить полное имя таблицы
+     *
+     * @param bool $isReaderConfig Брать ли имя БД READER_CONFIG (иначе из WRITER_CONFIG)
+     * @return string
+     */
+    public function getFullTableName(?bool $isReaderConfig = true): string
+    {
+        $clickHouse = $isReaderConfig ? $this->_getReader() : $this->_getWriter();
+        return $clickHouse->getClient()->settings()->getDatabase() . '.' . static::TABLE;
+    }
+
+    /**
      * Подчищаем инстанс, если объект уничтожили
      */
     public function __destruct()
