@@ -115,7 +115,10 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
         return in_array($inDirection, ['ASC', 'DESC']) ? $inDirection : 'ASC';
     }
 
-    /** @inheritdoc */
+    /**
+     * @inheritdoc
+     * @phpstan-ignore-next-line
+     */
     public function insert(array $recordOrRecords): Statement
     {
         return $this->_getWriter()->insertAssoc(static::TABLE, $recordOrRecords);
