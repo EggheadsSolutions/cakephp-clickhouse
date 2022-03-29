@@ -212,16 +212,17 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
         return !empty($maxDate) ? FrozenDate::parse($maxDate) : null;
     }
 
-    /**
-     * Получить полное имя таблицы
-     *
-     * @param bool $isReaderConfig Брать ли имя БД READER_CONFIG (иначе из WRITER_CONFIG)
-     * @return string
-     */
+    /** @inheritdoc */
     public function getFullTableName(?bool $isReaderConfig = true): string
     {
         $clickHouse = $isReaderConfig ? $this->_getReader() : $this->_getWriter();
         return $clickHouse->getClient()->settings()->getDatabase() . '.' . static::TABLE;
+    }
+
+    /** @inheritdoc */
+    public function getTableName(): string
+    {
+        return static::TABLE;
     }
 
     /**
