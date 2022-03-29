@@ -11,10 +11,7 @@ use LogicException;
 use OutOfBoundsException;
 use RuntimeException;
 
-/**
- * Экземпляр таблицы
- */
-abstract class AbstractClickHouseTable
+abstract class AbstractClickHouseTable implements ClickHouseTableInterface
 {
     /** @var int Сколько секунд ждать между проверками на выполнение мутации */
     private const WAIT_MUTATIONS_TIMEOUT = 5;
@@ -66,14 +63,7 @@ abstract class AbstractClickHouseTable
         return self::$_instances[$className];
     }
 
-    /**
-     * Проверяем поле на существование в таблице
-     *
-     * @param string $inFieldName
-     * @param string $defaultField
-     * @return string
-     * @throws OutOfBoundsException
-     */
+    /** @inheritdoc */
     public function checkField(string $inFieldName, string $defaultField): string
     {
         $schema = $this->getSchema();
@@ -87,12 +77,7 @@ abstract class AbstractClickHouseTable
         }
     }
 
-    /**
-     * Получаем схему таблицы
-     *
-     * @return array<string,string>
-     * @throws RuntimeException
-     */
+    /** @inheritdoc */
     public function getSchema(): array
     {
         if (empty($this->_schema)) {
@@ -107,14 +92,7 @@ abstract class AbstractClickHouseTable
         return $this->_schema;
     }
 
-    /**
-     * Ищем данные из общей базы кластера
-     *
-     * @param string $query
-     * @param array<string,string|int|float|string[]|int[]|float[]> $bindings
-     *
-     * @return Statement
-     */
+    /** @inheritdoc */
     public function select(string $query, array $bindings = []): Statement
     {
         return $this->_getReader()->select($query, $bindings);
@@ -130,12 +108,7 @@ abstract class AbstractClickHouseTable
         return ClickHouse::getInstance(static::READER_CONFIG);
     }
 
-    /**
-     * Проверяем варианты сортировки
-     *
-     * @param string $inDirection
-     * @return string
-     */
+    /** @inheritdoc */
     public function checkOrderDirection(string $inDirection): string
     {
         $inDirection = strtoupper($inDirection);
@@ -143,10 +116,7 @@ abstract class AbstractClickHouseTable
     }
 
     /**
-     * Сохраняем одну/несколько записей в таблице
-     *
-     * @param array<string,string,string|int|float|string[]|int[]|float[]>|array<int,array<string,string,string|int|float|string[]|int[]|float[]>> $recordOrRecords
-     * @return Statement
+     * @inheritdoc
      * @phpstan-ignore-next-line
      */
     public function insert(array $recordOrRecords): Statement
@@ -164,62 +134,37 @@ abstract class AbstractClickHouseTable
         return ClickHouse::getInstance(static::WRITER_CONFIG);
     }
 
-    /**
-     * Создаём транзакцию для сохранения очень большого объёма данных
-     */
+    /** @inheritdoc */
     public function createTransaction(): ClickHouseTransaction
     {
         return new ClickHouseTransaction($this->_getWriter(), static::TABLE, array_keys($this->getSchema()));
     }
 
-    /**
-     * Очищаем таблицу
-     *
-     * @return void
-     */
+    /** @inheritdoc */
     public function truncate(): void
     {
         $this->_getWriter()->getClient()->write('TRUNCATE TABLE ' . static::TABLE);
     }
 
-    /**
-     * Удаляем данные
-     *
-     * @param string $conditions
-     * @void void
-     */
+    /** @inheritdoc */
     public function deleteAll(string $conditions): void
     {
         $this->_getWriter()->getClient()->write('ALTER TABLE ' . static::TABLE . ' DELETE WHERE ' . $conditions);
     }
 
-    /**
-     * Внеплановое слияние кусков данных для таблиц
-     */
+    /** @inheritdoc */
     public function optimize(): void
     {
         $this->_getWriter()->getClient()->write('OPTIMIZE TABLE {me}', ['me' => static::TABLE]);
     }
 
-    /**
-     * Есть ли данные на текущую дату
-     *
-     * @param ChronosInterface $workDate
-     * @param string $dateColumn Поле с датой
-     * @return bool
-     */
+    /** @inheritdoc */
     public function hasData(ChronosInterface $workDate, string $dateColumn = 'checkDate'): bool
     {
         return (bool)$this->getTotal($workDate, $dateColumn);
     }
 
-    /**
-     * Получаем общее кол-во записей на определённую дату
-     *
-     * @param ChronosInterface $workDate
-     * @param string $dateColumn
-     * @return int
-     */
+    /** @inheritdoc */
     public function getTotal(ChronosInterface $workDate, string $dateColumn = 'checkDate'): int
     {
         return (int)$this->_getWriter()
@@ -233,12 +178,7 @@ abstract class AbstractClickHouseTable
             )->fetchOne('cnt');
     }
 
-    /**
-     * Удаляем данные и удостоверяемся о завершении всех мутаций
-     *
-     * @param string $conditions
-     * @return void
-     */
+    /** @inheritdoc */
     public function deleteAllSync(string $conditions): void
     {
         $this->deleteAll($conditions);
@@ -248,11 +188,7 @@ abstract class AbstractClickHouseTable
         }
     }
 
-    /**
-     * Проверяем, есть ли у таблицы мутации на текущий момент
-     *
-     * @return bool
-     */
+    /** @inheritdoc */
     public function hasMutations(): bool
     {
         return $this->_getWriter()
@@ -265,12 +201,7 @@ abstract class AbstractClickHouseTable
                 )->fetchOne('cnt') > 0;
     }
 
-    /**
-     * Получаю максимальную дату наличия записей
-     *
-     * @param string $dateColumn
-     * @return FrozenDate|null
-     */
+    /** @inheritdoc */
     public function getMaxDate(string $dateColumn = 'checkDate'): ?FrozenDate
     {
         $maxDate = $this->select(
