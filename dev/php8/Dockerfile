@@ -24,6 +24,7 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install -j$(nproc) pcntl \
     && pecl install xdebug && docker-php-ext-enable xdebug \
     && pecl install runkit7-alpha && docker-php-ext-enable runkit7 \
+    && pecl install redis && docker-php-ext-enable redis \
     && rm -rf /tmp/pear \
     && rm -frv /var/cache/apk/*
 
@@ -41,7 +42,7 @@ RUN echo "post_max_size = 200M" > /usr/local/etc/php/conf.d/40-custom.ini \
     && echo "upload_max_filesize = 200M" >> /usr/local/etc/php/conf.d/40-custom.ini \
     && echo "date.timezone = Europe/Moscow" >> /usr/local/etc/php/conf.d/40-custom.ini \
     && echo "xdebug.mode = debug" >> /usr/local/etc/php/conf.d/40-custom.ini \
-    && echo "xdebug.log = \"/var/www/dev/php8/xdebug.log\"" >> /usr/local/etc/php/conf.d/40-custom.ini \
+    && echo "xdebug.log = \"/var/www/dev/php/xdebug.log\"" >> /usr/local/etc/php/conf.d/40-custom.ini \
     && echo "memory_limit = -1" >> /usr/local/etc/php/conf.d/40-custom.ini
 
 ENV LANG ru_RU.UTF-8

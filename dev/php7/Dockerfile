@@ -41,7 +41,7 @@ RUN echo "post_max_size = 200M" > /usr/local/etc/php/conf.d/40-custom.ini \
     && echo "upload_max_filesize = 200M" >> /usr/local/etc/php/conf.d/40-custom.ini \
     && echo "date.timezone = Europe/Moscow" >> /usr/local/etc/php/conf.d/40-custom.ini \
     && echo "xdebug.mode = debug" >> /usr/local/etc/php/conf.d/40-custom.ini \
-    && echo "xdebug.log = \"/var/www/dev/php7/xdebug.log\"" >> /usr/local/etc/php/conf.d/40-custom.ini \
+    && echo "xdebug.log = \"/var/www/dev/php/xdebug.log\"" >> /usr/local/etc/php/conf.d/40-custom.ini \
     && echo "xdebug.remote_enable = 1" >> /usr/local/etc/php/conf.d/40-custom.ini \
     && echo "memory_limit = -1" >> /usr/local/etc/php/conf.d/40-custom.ini
 

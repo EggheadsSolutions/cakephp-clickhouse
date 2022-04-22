@@ -92,7 +92,7 @@ foreach ($rows as $record) {
 }
 ```
 
-В проекте, если нет тестового CH, обязательно надо создавать MOCKи, чтобы не изменять реальные данные. Примеры MOCK
+В проекте, если нет тестового CH, обязательно надо создавать MOKи, чтобы не изменять реальные данные. Примеры MOK
 
 ```php
 // Версия CakePHP 3.9
@@ -103,3 +103,35 @@ MethodMocker::mock(ClickHouseTransaction::class, 'commit')
 MethodMocker::mock(AbstractClickHouseTable::class, 'select')
     ->willReturnValue($this->createMock(Statement::class));
 ```
+
+## Применение SET для выбора из подзапроса
+
+Запрос вида:
+
+```php
+ClickHouse::getInstance()->select("
+SELECT * FROM wbCabinetRealizationDelivery
+WHERE realizationId GLOBAL IN (SELECT DISTINCT realizationId
+FROM wbCabinetSupplierDelivery
+WHERE wbConfigId IN (4)
+  AND deliveryDate BETWEEN '2022-03-01' AND '2022-03-05')
+GROUP BY checkDate, wbId")->rows();
+```
+
+Где подзапрос может повторяться несколько раз, можно применить промежуточную временную таблицу
+формата [Set](https://clickhouse.com/docs/ru/engines/table-engines/special/set):
+
+```php
+$set = new QueryClickHouseSet(['String'], "SELECT DISTINCT realizationId
+FROM wbCabinetSupplierDelivery
+WHERE wbConfigId IN (4)
+  AND deliveryDate BETWEEN '2022-03-01' AND '2022-03-05'", 'default');
+
+ClickHouse::getInstance()->select("
+SELECT * FROM wbCabinetRealizationDelivery
+WHERE realizationId IN " . $set->getName() . " GROUP BY checkDate, wbId")->rows();
+```
+
+Таким образом _QueryClickHouseSet_ создаёт временную таблицу, которая участвует в нескольких
+местах при выборке _IN_. А после выполнения скрипта временная таблица удаляется через
+деструктор.
