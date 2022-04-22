@@ -111,8 +111,7 @@ MethodMocker::mock(AbstractClickHouseTable::class, 'select')
 ```php
 ClickHouse::getInstance()->select("
 SELECT * FROM wbCabinetRealizationDelivery
-WHERE wbConfigId IN inWbConfigIds
-    realizationId GLOBAL IN (SELECT DISTINCT realizationId
+WHERE realizationId GLOBAL IN (SELECT DISTINCT realizationId
 FROM wbCabinetSupplierDelivery
 WHERE wbConfigId IN (4)
   AND deliveryDate BETWEEN '2022-03-01' AND '2022-03-05')
@@ -130,8 +129,7 @@ WHERE wbConfigId IN (4)
 
 ClickHouse::getInstance()->select("
 SELECT * FROM wbCabinetRealizationDelivery
-WHERE wbConfigId IN inWbConfigIds
-    realizationId IN " . $set->getName() . " GROUP BY checkDate, wbId")->rows();
+WHERE realizationId IN " . $set->getName() . " GROUP BY checkDate, wbId")->rows();
 ```
 
 Таким образом _QueryClickHouseSet_ создаёт временную таблицу, которая участвует в нескольких
