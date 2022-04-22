@@ -6,3 +6,4 @@ composer.lock
 /tmp
 /.phpunit.result.cache
 /.composer/
+.bash_history
