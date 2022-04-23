@@ -35,4 +35,3 @@ class QueryClickHouseSetTest extends TestCase
         print_r($clickhouse->select("DESCRIBE " . $tableName)->fetchOne());
     }
 }
-
