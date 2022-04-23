@@ -11,7 +11,7 @@ jobs:
       matrix:
         php-versions: [ '7.4', '8.0' ]
     steps:
-      - uses: EggheadsSolutions/php-unit-test@v1
+      - uses: EggheadsSolutions/ci-php-unit-test@v1
         with:
           php-version: ${{ matrix.php-versions }}
           mysql: no
