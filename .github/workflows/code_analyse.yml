@@ -11,6 +11,6 @@ jobs:
       matrix:
           php-versions: [ '7.4', '8.0' ]
     steps:
-      - uses: EggheadsSolutions/php-standart-check@v1
+      - uses: EggheadsSolutions/ci-php-standart-check@v1
         with:
           php-version: ${{ matrix.php-versions }}
