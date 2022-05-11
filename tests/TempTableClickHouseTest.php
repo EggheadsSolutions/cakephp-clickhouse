@@ -7,9 +7,9 @@ use Cake\I18n\FrozenTime;
 use Cake\TestSuite\TestCase;
 use ClickHouseDB\Exception\QueryException;
 use Eggheads\CakephpClickHouse\ClickHouse;
-use Eggheads\CakephpClickHouse\QueryClickHouseSet;
+use Eggheads\CakephpClickHouse\TempTableClickHouse;
 
-class QueryClickHouseSetTest extends TestCase
+class TempTableClickHouseTest extends TestCase
 {
     private const CH_PROFILE = 'writer';
 
@@ -17,10 +17,10 @@ class QueryClickHouseSetTest extends TestCase
     public function test(): void
     {
         FrozenTime::setTestNow('2022-04-22 18:43:00');
-        $set = new QueryClickHouseSet(['String'], "SELECT '1'", self::CH_PROFILE);
-        self::assertEquals('tempSet220422184300_0', $set->getName());
-
+        $set = new TempTableClickHouse('Set', ['String'], "SELECT '1'", self::CH_PROFILE);
         $tableName = $set->getName();
+        self::assertEquals('tempSet220422184300_0', $tableName);
+
         $clickhouse = ClickHouse::getInstance(self::CH_PROFILE);
         self::assertTrue((bool)$clickhouse->select("SELECT '1' IN " . $tableName . " as isValid")
             ->fetchOne('isValid'));
