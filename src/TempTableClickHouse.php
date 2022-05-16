@@ -32,16 +32,17 @@ class TempTableClickHouse
      * @param string $name
      * @param string[] $typeMap Массив типов полей в наборе
      * @param string $fillQuery SELECT запрос на наполнение сета, поля должны соблюдать порядок $typeMap
+     * @param array<string,string|int|float|string[]|int[]|float[]> $bindings
      * @param string $profile
      */
-    public function __construct(string $name, array $typeMap, string $fillQuery, string $profile = 'default')
+    public function __construct(string $name, array $typeMap, string $fillQuery, array $bindings = [], string $profile = 'default')
     {
         $date = FrozenTime::now();
-        $this->_name = self::PREFIX . ucfirst($name) . $date->format('ymdHis') . '_' . $date->microsecond;
+        $this->_name = self::PREFIX . ucfirst($name) . '_' . $date->format('ymdHis') . '_' . $date->microsecond;
         $this->_clickHouse = ClickHouse::getInstance($profile);
 
         $this->_create($typeMap);
-        $this->_fill($fillQuery);
+        $this->_fill($fillQuery, $bindings);
     }
 
     /**
@@ -59,7 +60,7 @@ class TempTableClickHouse
      */
     public function getName(): string
     {
-        return $this->_name;
+        return $this->_clickHouse->getClient()->settings()->getDatabase() . '.' . $this->_name;
     }
 
     /**
@@ -74,7 +75,8 @@ class TempTableClickHouse
 
         $fieldsArr = [];
         foreach ($typeMap as $index => $fieldType) {
-            $fieldsArr[] = 'field' . $index . ' ' . $fieldType;
+            $key = is_numeric($index) ? 'field' . $index : $index;
+            $fieldsArr[] = $key . ' ' . $fieldType;
         }
 
         $query = 'CREATE TABLE IF NOT EXISTS ' . $this->_name . '
@@ -89,11 +91,12 @@ class TempTableClickHouse
      * Наполняем сет
      *
      * @param string $fillQuery
+     * @param array<string,string|int|float|string[]|int[]|float[]> $bindings
      * @return void
      */
-    private function _fill(string $fillQuery): void
+    private function _fill(string $fillQuery, array $bindings = []): void
     {
-        $this->_clickHouse->getClient()->write('INSERT INTO ' . $this->_name . ' ' . $fillQuery);
+        $this->_clickHouse->getClient()->write('INSERT INTO ' . $this->_name . ' ' . $fillQuery, $bindings);
     }
 
     /**

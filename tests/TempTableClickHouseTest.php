@@ -17,21 +17,27 @@ class TempTableClickHouseTest extends TestCase
     public function test(): void
     {
         FrozenTime::setTestNow('2022-04-22 18:43:00');
-        $set = new TempTableClickHouse('Set', ['String'], "SELECT '1'", self::CH_PROFILE);
+        $set = new TempTableClickHouse('Set', ['id' => 'int', 'String'], "SELECT :id, '1'", ['id' => 123], self::CH_PROFILE);
         $tableName = $set->getName();
-        self::assertEquals('tempSet220422184300_0', $tableName);
+        $this->assertTextContains('tempSet_220422184300_0', $tableName);
 
-        $clickhouse = ClickHouse::getInstance(self::CH_PROFILE);
-        self::assertTrue((bool)$clickhouse->select("SELECT '1' IN " . $tableName . " as isValid")
-            ->fetchOne('isValid'));
+        $result = ClickHouse::getInstance(self::CH_PROFILE)->select('SELECT * FROM ' . $tableName)->rows();
+        self::assertCount(1, $result);
+        self::assertEquals(['id' => 123, 'field0' => 1], $result[0]);
+    }
 
-        self::assertFalse((bool)$clickhouse->select("SELECT '0' IN " . $tableName . " as isValid")
-            ->fetchOne('isValid'));
+    /**
+     * @testdox Проверим автоудаление таблицы
+     * @return void
+     */
+    public function testRemoveTable(): void
+    {
+        $set = new TempTableClickHouse('Set', ['String'], "SELECT '1'", [], self::CH_PROFILE);
+        $tableName = $set->getName();
 
-        // таблица не найдена
         unset($set);
         $this->expectExceptionCode('404');
         $this->expectException(QueryException::class);
-        print_r($clickhouse->select("DESCRIBE " . $tableName)->fetchOne());
+        ClickHouse::getInstance(self::CH_PROFILE)->select("DESCRIBE " . $tableName)->fetchOne();
     }
 }

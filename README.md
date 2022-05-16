@@ -122,15 +122,24 @@ GROUP BY checkDate, wbId")->rows();
 формата [Memory](https://clickhouse.com/docs/ru/engines/table-engines/special/memory):
 
 ```php
-$set = new TempTableClickHouse('Test', ['String'], "SELECT DISTINCT realizationId
-FROM wbCabinetSupplierDelivery
-WHERE wbConfigId IN (4)
-  AND deliveryDate BETWEEN '2022-03-01' AND '2022-03-05'", 'default');
+$set = new TempTableClickHouse(
+    'Test',
+    ['testId' => 'String'],
+    "SELECT DISTINCT realizationId
+    FROM wbCabinetSupplierDelivery
+    WHERE wbConfigId IN (4)
+      AND deliveryDate BETWEEN '2022-03-01' AND '2022-03-05'",
+    'default'
+);
 
-ClickHouse::getInstance()->select("
-SELECT * FROM wbCabinetRealizationDelivery
-WHERE realizationId IN " . $set->getName() . " GROUP BY checkDate, wbId")->rows();
+$ch = ClickHouse::getInstance();
+$ch->select('
+    SELECT * FROM wbCabinetRealizationDelivery
+    WHERE realizationId IN ' . $set->getName() . ' GROUP BY checkDate, wbId'
+)->rows();
+
+$ch->select('SELECT testId FROM '. $set->getName())
 ```
 
-Таким образом _TempTableClickHouse_ создаёт временную таблицу, которая участвует в нескольких местах при выборке _IN_. А
-после выполнения скрипта временная таблица удаляется через деструктор.
+Таким образом _TempTableClickHouse_ создаёт временную таблицу, которая участвует в нескольких местах сложного запроса,
+например, при выборке _IN_. А после выполнения скрипта временная таблица удаляется через деструктор.
