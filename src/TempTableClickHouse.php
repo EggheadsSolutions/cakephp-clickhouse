@@ -12,6 +12,9 @@ use Cake\I18n\FrozenTime;
  */
 class TempTableClickHouse
 {
+    /**
+     * Префикс названия создаваемой таблицы
+     */
     private const PREFIX = 'temp';
 
     /**
@@ -34,6 +37,8 @@ class TempTableClickHouse
      * @param string $fillQuery SELECT запрос на наполнение сета, поля должны соблюдать порядок $typeMap
      * @param array<string,string|int|float|string[]|int[]|float[]> $bindings
      * @param string $profile
+     *
+     * @example new TempTableClickHouse('tableName', ['id' => 'int'], 'SELECT :id', ['id' => 123], 'writer');
      */
     public function __construct(string $name, array $typeMap, string $fillQuery, array $bindings = [], string $profile = 'default')
     {
@@ -88,7 +93,7 @@ class TempTableClickHouse
     }
 
     /**
-     * Наполняем сет
+     * Наполняем таблицу
      *
      * @param string $fillQuery
      * @param array<string,string|int|float|string[]|int[]|float[]> $bindings

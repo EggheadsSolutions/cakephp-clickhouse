@@ -13,7 +13,10 @@ class TempTableClickHouseTest extends TestCase
 {
     private const CH_PROFILE = 'writer';
 
-    /** Тест класса сета */
+    /**
+     * @testdox Проверим создание и заполнение временной таблицы
+     * @see
+     */
     public function test(): void
     {
         FrozenTime::setTestNow('2022-04-22 18:43:00');
