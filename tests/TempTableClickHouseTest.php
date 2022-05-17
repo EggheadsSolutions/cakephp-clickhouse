@@ -15,7 +15,6 @@ class TempTableClickHouseTest extends TestCase
 
     /**
      * @testdox Проверим создание и заполнение временной таблицы
-     * @see
      */
     public function test(): void
     {
