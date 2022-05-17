@@ -104,7 +104,7 @@ MethodMocker::mock(AbstractClickHouseTable::class, 'select')
     ->willReturnValue($this->createMock(Statement::class));
 ```
 
-## Применение SET для выбора из подзапроса
+## Применение временной таблицы для выбора из подзапроса
 
 Запрос вида:
 
@@ -119,19 +119,27 @@ GROUP BY checkDate, wbId")->rows();
 ```
 
 Где подзапрос может повторяться несколько раз, можно применить промежуточную временную таблицу
-формата [Set](https://clickhouse.com/docs/ru/engines/table-engines/special/set):
+формата [Memory](https://clickhouse.com/docs/ru/engines/table-engines/special/memory):
 
 ```php
-$set = new QueryClickHouseSet(['String'], "SELECT DISTINCT realizationId
-FROM wbCabinetSupplierDelivery
-WHERE wbConfigId IN (4)
-  AND deliveryDate BETWEEN '2022-03-01' AND '2022-03-05'", 'default');
+$set = new TempTableClickHouse(
+    'Test',
+    ['testId' => 'String'],
+    "SELECT DISTINCT realizationId
+    FROM wbCabinetSupplierDelivery
+    WHERE wbConfigId IN (4)
+      AND deliveryDate BETWEEN '2022-03-01' AND '2022-03-05'",
+    'default'
+);
 
-ClickHouse::getInstance()->select("
-SELECT * FROM wbCabinetRealizationDelivery
-WHERE realizationId IN " . $set->getName() . " GROUP BY checkDate, wbId")->rows();
+$ch = ClickHouse::getInstance();
+$ch->select('
+    SELECT * FROM wbCabinetRealizationDelivery
+    WHERE realizationId IN ' . $set->getName() . ' GROUP BY checkDate, wbId'
+)->rows();
+
+$ch->select('SELECT testId FROM '. $set->getName())
 ```
 
-Таким образом _QueryClickHouseSet_ создаёт временную таблицу, которая участвует в нескольких
-местах при выборке _IN_. А после выполнения скрипта временная таблица удаляется через
-деструктор.
+Таким образом _TempTableClickHouse_ создаёт временную таблицу, которая участвует в нескольких местах сложного запроса,
+например, при выборке _IN_. А после выполнения скрипта временная таблица удаляется через деструктор.

@@ -6,13 +6,16 @@ namespace Eggheads\CakephpClickHouse;
 use Cake\I18n\FrozenTime;
 
 /**
- * Класс для создания временной таблицы типа Set
+ * Класс для создания временной таблицы типа Memory
  *
- * @see https://clickhouse.com/docs/ru/engines/table-engines/special/set/
+ * @see https://clickhouse.com/docs/ru/engines/table-engines/special/memory
  */
-class QueryClickHouseSet
+class TempTableClickHouse
 {
-    private const PREFIX = 'tempSet';
+    /**
+     * Префикс названия создаваемой таблицы
+     */
+    private const PREFIX = 'temp';
 
     /**
      * Имя временной таблицы
@@ -29,17 +32,22 @@ class QueryClickHouseSet
     private ClickHouse $_clickHouse;
 
     /**
+     * @param string $name
      * @param string[] $typeMap Массив типов полей в наборе
      * @param string $fillQuery SELECT запрос на наполнение сета, поля должны соблюдать порядок $typeMap
+     * @param array<string,string|int|float|string[]|int[]|float[]> $bindings
      * @param string $profile
+     *
+     * @example new TempTableClickHouse('tableName', ['id' => 'int'], 'SELECT :id', ['id' => 123], 'writer');
      */
-    public function __construct(array $typeMap, string $fillQuery, string $profile = 'default')
+    public function __construct(string $name, array $typeMap, string $fillQuery, array $bindings = [], string $profile = 'default')
     {
-        $this->_name = self::PREFIX . FrozenTime::now()->format('ymdHis') . '_' . FrozenTime::now()->microsecond;
+        $date = FrozenTime::now();
+        $this->_name = self::PREFIX . ucfirst($name) . '_' . $date->format('ymdHis') . '_' . $date->microsecond;
         $this->_clickHouse = ClickHouse::getInstance($profile);
 
         $this->_create($typeMap);
-        $this->_fill($fillQuery);
+        $this->_fill($fillQuery, $bindings);
     }
 
     /**
@@ -57,7 +65,7 @@ class QueryClickHouseSet
      */
     public function getName(): string
     {
-        return $this->_name;
+        return $this->_clickHouse->getClient()->settings()->getDatabase() . '.' . $this->_name;
     }
 
     /**
@@ -72,26 +80,28 @@ class QueryClickHouseSet
 
         $fieldsArr = [];
         foreach ($typeMap as $index => $fieldType) {
-            $fieldsArr[] = 'field' . $index . ' ' . $fieldType;
+            $key = is_numeric($index) ? 'field' . $index : $index;
+            $fieldsArr[] = $key . ' ' . $fieldType;
         }
 
-        $query = "CREATE TABLE IF NOT EXISTS " . $this->_name . "
+        $query = 'CREATE TABLE IF NOT EXISTS ' . $this->_name . '
         (
-            " . implode(",\n", $fieldsArr) . "
-        ) engine Set";
+            ' . implode(",\n", $fieldsArr) . '
+        ) ENGINE = Memory()';
 
         $this->_clickHouse->getClient()->write($query);
     }
 
     /**
-     * Наполняем сет
+     * Наполняем таблицу
      *
      * @param string $fillQuery
+     * @param array<string,string|int|float|string[]|int[]|float[]> $bindings
      * @return void
      */
-    private function _fill(string $fillQuery): void
+    private function _fill(string $fillQuery, array $bindings = []): void
     {
-        $this->_clickHouse->getClient()->write("INSERT INTO " . $this->_name . " " . $fillQuery);
+        $this->_clickHouse->getClient()->write('INSERT INTO ' . $this->_name . ' ' . $fillQuery, $bindings);
     }
 
     /**
@@ -101,6 +111,6 @@ class QueryClickHouseSet
      */
     private function _destroy(): void
     {
-        $this->_clickHouse->getClient()->write("DROP TABLE IF EXISTS " . $this->_name);
+        $this->_clickHouse->getClient()->write('DROP TABLE IF EXISTS ' . $this->_name);
     }
 }
