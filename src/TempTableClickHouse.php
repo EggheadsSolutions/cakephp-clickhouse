@@ -39,6 +39,32 @@ class TempTableClickHouse
     private array $_fieldsSchema = [];
 
     /**
+     * Фабрика создания временной таблицы на основе существующей
+     *
+     * @param string $name
+     * @param ClickHouseTableInterface $sourceTable
+     * @param string $fillQuery
+     * @param array $bindings
+     * @param string $profile
+     * @return static
+     */
+    public static function createFromTable(
+        string                   $name,
+        ClickHouseTableInterface $sourceTable,
+        string                   $fillQuery = '',
+        array                    $bindings = [],
+        string                   $profile = 'default'
+    ): self {
+        return new self(
+            $name,
+            $sourceTable->getSchema(),
+            $fillQuery,
+            $bindings,
+            $profile
+        );
+    }
+
+    /**
      * @param string $name
      * @param string[]|array<string, string> $typeMap Массив типов полей в наборе
      * @param string $fillQuery SELECT запрос на наполнение сета, поля должны соблюдать порядок $typeMap

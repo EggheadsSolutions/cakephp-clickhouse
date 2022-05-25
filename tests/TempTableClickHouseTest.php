@@ -8,6 +8,7 @@ use Cake\TestSuite\TestCase;
 use ClickHouseDB\Exception\QueryException;
 use Eggheads\CakephpClickHouse\ClickHouse;
 use Eggheads\CakephpClickHouse\TempTableClickHouse;
+use Eggheads\CakephpClickHouse\Tests\AbstractClickHouseTableTest\TestClickHouseTable;
 
 class TempTableClickHouseTest extends TestCase
 {
@@ -41,5 +42,32 @@ class TempTableClickHouseTest extends TestCase
         $this->expectExceptionCode('404');
         $this->expectException(QueryException::class);
         ClickHouse::getInstance(self::CH_PROFILE)->select("DESCRIBE " . $tableName)->fetchOne();
+    }
+
+    /**
+     * @testdox Проверим создание по образу и подобию
+     * @return void
+     */
+    public function testCloneTable(): void
+    {
+        $testTable = TestClickHouseTable::getInstance();
+        $table = TempTableClickHouse::createFromTable(
+            'clone',
+            $testTable,
+            "SELECT '1', 'bla-bla', 3.0, '2020-08-04 09:00:00'",
+            [],
+            self::CH_PROFILE
+        );
+
+        $selectAllQuery = 'SELECT * FROM ' . $testTable::TABLE;
+        self::assertEquals(
+            [
+                'id' => '1',
+                'url' => 'bla-bla',
+                'data' => 3.0,
+                'created' => '2020-08-04 09:00:00',
+            ],
+            $testTable->select('SELECT * FROM ' . $table->getName())->rows()
+        );
     }
 }
