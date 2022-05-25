@@ -10,6 +10,9 @@ use Eggheads\CakephpClickHouse\ClickHouse;
 use Eggheads\CakephpClickHouse\TempTableClickHouse;
 use Eggheads\CakephpClickHouse\Tests\AbstractClickHouseTableTest\TestClickHouseTable;
 
+/**
+ * @SuppressWarnings(PHPMD.MethodMix)
+ */
 class TempTableClickHouseTest extends TestCase
 {
     private const CH_PROFILE = 'writer';
@@ -50,16 +53,14 @@ class TempTableClickHouseTest extends TestCase
      */
     public function testCloneTable(): void
     {
-        $testTable = TestClickHouseTable::getInstance();
         $table = TempTableClickHouse::createFromTable(
             'clone',
-            $testTable,
+            TestClickHouseTable::getInstance(),
             "SELECT '1', 'bla-bla', 3.0, '2020-08-04 09:00:00'",
             [],
             self::CH_PROFILE
         );
 
-        $selectAllQuery = 'SELECT * FROM ' . $testTable::TABLE;
         self::assertEquals(
             [
                 'id' => '1',
@@ -67,7 +68,7 @@ class TempTableClickHouseTest extends TestCase
                 'data' => 3.0,
                 'created' => '2020-08-04 09:00:00',
             ],
-            $testTable->select('SELECT * FROM ' . $table->getName())->rows()
+            ClickHouse::getInstance(self::CH_PROFILE)->select('SELECT * FROM ' . $table->getName())->rows()
         );
     }
 }
