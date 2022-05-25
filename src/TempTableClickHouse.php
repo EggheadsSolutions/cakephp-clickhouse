@@ -32,15 +32,22 @@ class TempTableClickHouse
     private ClickHouse $_clickHouse;
 
     /**
+     * Структура таблицы
+     *
+     * @var array<string, string>
+     */
+    private array $_fieldsSchema = [];
+
+    /**
      * @param string $name
-     * @param string[] $typeMap Массив типов полей в наборе
+     * @param string[]|array<string, string> $typeMap Массив типов полей в наборе
      * @param string $fillQuery SELECT запрос на наполнение сета, поля должны соблюдать порядок $typeMap
      * @param array<string,string|int|float|string[]|int[]|float[]> $bindings
      * @param string $profile
      *
      * @example new TempTableClickHouse('tableName', ['id' => 'int'], 'SELECT :id', ['id' => 123], 'writer');
      */
-    public function __construct(string $name, array $typeMap, string $fillQuery, array $bindings = [], string $profile = 'default')
+    public function __construct(string $name, array $typeMap, string $fillQuery = '', array $bindings = [], string $profile = 'default')
     {
         $date = FrozenTime::now();
         $this->_name = self::PREFIX . ucfirst($name) . '_' . $date->format('ymdHis') . '_' . $date->microsecond;
@@ -82,6 +89,7 @@ class TempTableClickHouse
         foreach ($typeMap as $index => $fieldType) {
             $key = is_numeric($index) ? 'field' . $index : $index;
             $fieldsArr[] = $key . ' ' . $fieldType;
+            $this->_fieldsSchema[$key] = $fieldType;
         }
 
         $query = 'CREATE TABLE IF NOT EXISTS ' . $this->_name . '
@@ -101,7 +109,19 @@ class TempTableClickHouse
      */
     private function _fill(string $fillQuery, array $bindings = []): void
     {
-        $this->_clickHouse->getClient()->write('INSERT INTO ' . $this->_name . ' ' . $fillQuery, $bindings);
+        if ($fillQuery) {
+            $this->_clickHouse->getClient()->write('INSERT INTO ' . $this->_name . ' ' . $fillQuery, $bindings);
+        }
+    }
+
+    /**
+     * Создаём транзакцию для сохранения очень большого объёма данных
+     *
+     * @return ClickHouseTransaction
+     */
+    public function createTransaction(): ClickHouseTransaction
+    {
+        return new ClickHouseTransaction($this->_clickHouse, $this->_name, array_keys($this->_fieldsSchema));
     }
 
     /**
