@@ -126,17 +126,20 @@ interface ClickHouseTableInterface
     public function getMaxDate(string $dateColumn = 'checkDate'): ?FrozenDate;
 
     /**
-     * Получить полное имя таблицы
-     *
      * @param bool $isReaderConfig Брать ли имя БД READER_CONFIG (иначе из WRITER_CONFIG)
      * @return string
+     * @deprecated
+     * Получить полное имя таблицы
+     *
      */
     public function getFullTableName(?bool $isReaderConfig = true): string;
 
     /**
-     * Получить имя таблицы
+     * Получить полное имя таблицы
+     *
+     * @param bool $isReaderConfig Брать ли имя БД READER_CONFIG (иначе из WRITER_CONFIG)
      *
      * @return string
      */
-    public function getTableName(): string;
+    public function getTableName(?bool $isReaderConfig = true): string;
 }

@@ -212,17 +212,20 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
         return !empty($maxDate) ? FrozenDate::parse($maxDate) : null;
     }
 
-    /** @inheritdoc */
+    /**
+     * @deprecated
+     * @inheritdoc
+     */
     public function getFullTableName(?bool $isReaderConfig = true): string
     {
-        $clickHouse = $isReaderConfig ? $this->_getReader() : $this->_getWriter();
-        return $clickHouse->getClient()->settings()->getDatabase() . '.' . static::TABLE;
+        return $this->getTableName($isReaderConfig);
     }
 
     /** @inheritdoc */
-    public function getTableName(): string
+    public function getTableName(?bool $isReaderConfig = true): string
     {
-        return static::TABLE;
+        $clickHouse = $isReaderConfig ? $this->_getReader() : $this->_getWriter();
+        return $clickHouse->getClient()->settings()->getDatabase() . '.' . static::TABLE;
     }
 
     /**

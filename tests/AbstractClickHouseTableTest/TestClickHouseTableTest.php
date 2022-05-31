@@ -93,14 +93,13 @@ class TestClickHouseTableTest extends TestCase
     }
 
     /**
-     * Тестируем getFullTableName
+     * Тестируем getTableName
      *
      * @return void
-     * @see AbstractClickHouseTable::getFullTableName()
      */
-    public function testGetFullTableName(): void
+    public function testGetTableName(): void
     {
-        self::assertEquals('default.testTable', TestClickHouseTable::getInstance()->getFullTableName());
+        self::assertEquals('default.testTable', TestClickHouseTable::getInstance()->getTableName());
     }
 
     /** @inerhitDoc */
