@@ -47,7 +47,7 @@ class TempTableClickHouse
      * @param string $fillQuery
      * @param array<string, mixed> $bindings
      * @param string $profile
-     * @return static
+     * @return self
      */
     public static function createFromTable(
         string                   $name,
