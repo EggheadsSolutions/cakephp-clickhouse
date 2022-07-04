@@ -9,6 +9,7 @@ use Cake\I18n\FrozenTime;
  * Класс для создания временной таблицы типа Memory
  *
  * @see https://clickhouse.com/docs/ru/engines/table-engines/special/memory
+ * @SuppressWarnings(PHPMD.MethodMix)
  */
 class TempTableClickHouse
 {
@@ -44,7 +45,7 @@ class TempTableClickHouse
      * @param string $name
      * @param ClickHouseTableInterface $sourceTable
      * @param string $fillQuery
-     * @param array $bindings
+     * @param array<string, mixed> $bindings
      * @param string $profile
      * @return static
      */

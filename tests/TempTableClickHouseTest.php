@@ -62,12 +62,12 @@ class TempTableClickHouseTest extends TestCase
         );
 
         self::assertEquals(
-            [
-                'id' => '1',
-                'url' => 'bla-bla',
-                'data' => 3.0,
-                'created' => '2020-08-04 09:00:00',
-            ],
+            [[
+                 'id' => '1',
+                 'url' => 'bla-bla',
+                 'data' => 3.0,
+                 'created' => '2020-08-04 09:00:00',
+             ]],
             ClickHouse::getInstance(self::CH_PROFILE)->select('SELECT * FROM ' . $table->getName())->rows()
         );
     }
