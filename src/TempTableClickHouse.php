@@ -9,6 +9,7 @@ use Cake\I18n\FrozenTime;
  * Класс для создания временной таблицы типа Memory
  *
  * @see https://clickhouse.com/docs/ru/engines/table-engines/special/memory
+ * @SuppressWarnings(PHPMD.MethodMix)
  */
 class TempTableClickHouse
 {
@@ -37,6 +38,32 @@ class TempTableClickHouse
      * @var array<string, string>
      */
     private array $_fieldsSchema = [];
+
+    /**
+     * Фабрика создания временной таблицы на основе существующей
+     *
+     * @param string $name
+     * @param ClickHouseTableInterface $sourceTable
+     * @param string $fillQuery
+     * @param array<string, mixed> $bindings
+     * @param string $profile
+     * @return self
+     */
+    public static function createFromTable(
+        string                   $name,
+        ClickHouseTableInterface $sourceTable,
+        string                   $fillQuery = '',
+        array                    $bindings = [],
+        string                   $profile = 'default'
+    ): self {
+        return new self(
+            $name,
+            $sourceTable->getSchema(),
+            $fillQuery,
+            $bindings,
+            $profile
+        );
+    }
 
     /**
      * @param string $name
