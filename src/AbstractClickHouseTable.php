@@ -153,6 +153,16 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     }
 
     /** @inheritdoc */
+    public function deleteAllSync(string $conditions): void
+    {
+        $this->deleteAll($conditions);
+        sleep(self::WAIT_MUTATIONS_TIMEOUT);
+        while ($this->hasMutations()) {
+            sleep(self::WAIT_MUTATIONS_TIMEOUT);
+        }
+    }
+
+    /** @inheritdoc */
     public function optimize(): void
     {
         $this->_getWriter()->getClient()->write('OPTIMIZE TABLE {me}', ['me' => static::TABLE]);
@@ -176,16 +186,6 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
                     'workDateString' => $workDate->toDateString(),
                 ]
             )->fetchOne('cnt');
-    }
-
-    /** @inheritdoc */
-    public function deleteAllSync(string $conditions): void
-    {
-        $this->deleteAll($conditions);
-        sleep(self::WAIT_MUTATIONS_TIMEOUT);
-        while ($this->hasMutations()) {
-            sleep(self::WAIT_MUTATIONS_TIMEOUT);
-        }
     }
 
     /** @inheritdoc */

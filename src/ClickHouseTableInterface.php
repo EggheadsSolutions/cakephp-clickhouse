@@ -83,6 +83,14 @@ interface ClickHouseTableInterface
     public function deleteAll(string $conditions): void;
 
     /**
+     * Удаляем данные и удостоверяемся о завершении всех мутаций
+     *
+     * @param string $conditions
+     * @return void
+     */
+    public function deleteAllSync(string $conditions): void;
+
+    /**
      * Внеплановое слияние кусков данных для таблиц
      */
     public function optimize(): void;
@@ -104,14 +112,6 @@ interface ClickHouseTableInterface
      * @return int
      */
     public function getTotal(ChronosInterface $workDate, string $dateColumn = 'checkDate'): int;
-
-    /**
-     * Удаляем данные и удостоверяемся о завершении всех мутаций
-     *
-     * @param string $conditions
-     * @return void
-     */
-    public function deleteAllSync(string $conditions): void;
 
     /**
      * Проверяем, есть ли у таблицы мутации на текущий момент
