@@ -52,7 +52,7 @@ class TestClickHouseTableTest extends TestCase
 
         assertEquals('2020-08-04', $testTable->getMaxDate('created')->toDateString());
 
-        $testTable->deleteAll("id = '1'");
+        $testTable->deleteAll("id = :id", ['id' => '1']);
         sleep(1);
         self::assertEquals([$svData[1]], $testTable->select($selectAllQuery)->rows());
 
@@ -89,7 +89,7 @@ class TestClickHouseTableTest extends TestCase
         $selectAllQuery = 'SELECT * FROM ' . $testTable::TABLE;
 
         self::assertNotEmpty($testTable->select($selectAllQuery)->rows());
-        $testTable->deleteAllSync("id > '0'");
+        $testTable->deleteAllSync("id > :aboveId", ['aboveId' => '0']);
         self::assertEmpty($testTable->select($selectAllQuery)->rows());
     }
 
