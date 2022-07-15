@@ -78,7 +78,7 @@ interface ClickHouseTableInterface
      * Удаляем данные
      *
      * @param string $conditions
-     * @void void
+     * @return void
      */
     public function deleteAll(string $conditions): void;
 
