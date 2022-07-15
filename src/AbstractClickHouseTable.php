@@ -147,15 +147,15 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     }
 
     /** @inheritdoc */
-    public function deleteAll(string $conditions): void
+    public function deleteAll(string $conditions, array $bindings = []): void
     {
-        $this->_getWriter()->getClient()->write('ALTER TABLE ' . static::TABLE . ' DELETE WHERE ' . $conditions);
+        $this->_getWriter()->getClient()->write('ALTER TABLE ' . static::TABLE . ' DELETE WHERE ' . $conditions, $bindings);
     }
 
     /** @inheritdoc */
-    public function deleteAllSync(string $conditions): void
+    public function deleteAllSync(string $conditions, array $bindings = []): void
     {
-        $this->deleteAll($conditions);
+        $this->deleteAll($conditions, $bindings);
         sleep(self::WAIT_MUTATIONS_TIMEOUT);
         while ($this->hasMutations()) {
             sleep(self::WAIT_MUTATIONS_TIMEOUT);

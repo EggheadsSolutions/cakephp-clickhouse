@@ -78,17 +78,19 @@ interface ClickHouseTableInterface
      * Удаляем данные
      *
      * @param string $conditions
+     * @param mixed[] $bindings
      * @return void
      */
-    public function deleteAll(string $conditions): void;
+    public function deleteAll(string $conditions, array $bindings = []): void;
 
     /**
      * Удаляем данные и удостоверяемся о завершении всех мутаций
      *
      * @param string $conditions
+     * @param mixed[] $bindings
      * @return void
      */
-    public function deleteAllSync(string $conditions): void;
+    public function deleteAllSync(string $conditions, array $bindings = []): void;
 
     /**
      * Внеплановое слияние кусков данных для таблиц
