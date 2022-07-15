@@ -7,6 +7,7 @@ use Cake\Cache\Cache;
 use Cake\TestSuite\TestCase;
 use Eggheads\CakephpClickHouse\AbstractClickHouseTable;
 use Eggheads\CakephpClickHouse\ClickHouse;
+use Eggheads\Mocks\MethodMocker;
 use function PHPUnit\Framework\assertEquals;
 
 class TestClickHouseTableTest extends TestCase
@@ -121,5 +122,13 @@ class TestClickHouseTableTest extends TestCase
         );
 
         Cache::disable();
+    }
+
+    /** @inheritDoc */
+    public function tearDown(): void
+    {
+        parent::tearDown();
+
+        MethodMocker::restore($this->hasFailed());
     }
 }
