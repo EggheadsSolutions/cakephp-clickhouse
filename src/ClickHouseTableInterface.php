@@ -14,6 +14,9 @@ use RuntimeException;
  */
 interface ClickHouseTableInterface
 {
+    /** @var positive-int Количество секунд - интервал ожидания между проверками завершения мутаций. */
+    public const MUTATIONS_CHECK_INTERVAL = 5;
+
     /**
      * Проверяем поле на существование в таблице
      *
@@ -116,6 +119,15 @@ interface ClickHouseTableInterface
      * @return bool
      */
     public function hasMutations(): bool;
+
+    /**
+     * Ждём завершения мутаций выполняя проверку каждые `$interval` секунд, если для `$interval` указано `null` - то
+     * используется значение `static::MUTATIONS_CHECK_INTERVAL`.
+     *
+     * @param positive-int|null $interval
+     * @return void
+     */
+    public function waitMutations(?int $interval = null): void;
 
     /**
      * Получаю максимальную дату наличия записей

@@ -202,6 +202,16 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     }
 
     /** @inheritdoc */
+    public function waitMutations(?int $interval = null): void
+    {
+        $interval ??= static::MUTATIONS_CHECK_INTERVAL;
+
+        do {
+            sleep($interval);
+        } while ($this->hasMutations());
+    }
+
+    /** @inheritdoc */
     public function getMaxDate(string $dateColumn = 'checkDate'): ?FrozenDate
     {
         $maxDate = $this->select(
