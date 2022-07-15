@@ -14,4 +14,6 @@ class TestClickHouseTable extends AbstractClickHouseTable
     public const TABLE = 'testTable';
     /** @inerhitDoc */
     public const WRITER_CONFIG = 'ssdNode';
+    /** @inerhitDoc  */
+    public const MUTATIONS_CHECK_INTERVAL = 2;
 }

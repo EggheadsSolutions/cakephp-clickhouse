@@ -103,6 +103,34 @@ class TestClickHouseTableTest extends TestCase
         self::assertEquals('default.testTable', TestClickHouseTable::getInstance()->getTableName());
     }
 
+    /**
+     * Тестируем `waitMutations`.
+     *
+     * @param int $hasMutationTimes
+     * @param positive-int|null $intervalParam
+     * @param positive-int $expectedTimeSpent
+     * @return void
+     * @dataProvider waitMutationsProvider
+     * @covers \Eggheads\CakephpClickHouse\AbstractClickHouseTable::waitMutations()
+     * @uses AbstractClickHouseTable::hasMutations()
+     */
+    public function testWaitMutations(int $hasMutationTimes, ?int $intervalParam, int $expectedTimeSpent): void
+    {
+        $hasMutationValues = array_merge(array_fill(0, $hasMutationTimes, true), [false]);
+        MethodMocker::mock(AbstractClickHouseTable::class, 'hasMutations')
+            ->expectCall($hasMutationTimes + 1)
+            ->willReturnValueList($hasMutationValues);
+
+        $testTable = TestClickHouseTable::getInstance();
+
+        $startedAt = time();
+
+        $testTable->waitMutations($intervalParam);
+
+        $timeSpent = (time() - $startedAt);
+        self::assertEquals($expectedTimeSpent, $timeSpent);
+    }
+
     /** @inerhitDoc */
     public function setUp(): void
     {
@@ -130,5 +158,17 @@ class TestClickHouseTableTest extends TestCase
         parent::tearDown();
 
         MethodMocker::restore($this->hasFailed());
+    }
+
+    /**
+     * @return array<array{int, int|null, int}>
+     */
+    public function waitMutationsProvider(): array
+    {
+        return [
+            'Дефолтный `$interval`' => [1, null, 4],
+            'Кастомный `$interval`' => [4, 1, 5],
+            'Отсутствие мутаций' => [0, 3, 3],
+        ];
     }
 }
