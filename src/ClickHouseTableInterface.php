@@ -123,13 +123,11 @@ interface ClickHouseTableInterface
     public function hasMutations(): bool;
 
     /**
-     * Ждём завершения мутаций выполняя проверку каждые `$interval` секунд, если для `$interval` указано `null` - то
-     * используется значение `static::MUTATIONS_CHECK_INTERVAL`.
+     * Ждём завершения мутаций выполняя проверку каждые `static::MUTATIONS_CHECK_INTERVAL` секунд.
      *
-     * @param positive-int|null $interval
      * @return void
      */
-    public function waitMutations(?int $interval = null): void;
+    public function waitMutations(): void;
 
     /**
      * Получаю максимальную дату наличия записей

@@ -196,9 +196,9 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     }
 
     /** @inheritdoc */
-    public function waitMutations(?int $interval = null): void
+    public function waitMutations(): void
     {
-        $interval ??= static::MUTATIONS_CHECK_INTERVAL;
+        $interval = static::MUTATIONS_CHECK_INTERVAL;
 
         do {
             sleep($interval);

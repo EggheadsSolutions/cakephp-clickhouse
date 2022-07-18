@@ -7,6 +7,7 @@ use Cake\Cache\Cache;
 use Cake\TestSuite\TestCase;
 use Eggheads\CakephpClickHouse\AbstractClickHouseTable;
 use Eggheads\CakephpClickHouse\ClickHouse;
+use Eggheads\CakephpClickHouse\ClickHouseTableInterface;
 use Eggheads\Mocks\ConstantMocker;
 use Eggheads\Mocks\MethodMocker;
 use function PHPUnit\Framework\assertEquals;
@@ -108,14 +109,13 @@ class TestClickHouseTableTest extends TestCase
      * Тестируем `waitMutations`.
      *
      * @param int $hasMutationIsTrueTimes
-     * @param positive-int|null $intervalParam
-     * @param positive-int $expectedTimeSpent
      * @return void
      * @dataProvider waitMutationsProvider
      * @covers \Eggheads\CakephpClickHouse\AbstractClickHouseTable::waitMutations()
      * @uses AbstractClickHouseTable::hasMutations()
+     * @uses ClickHouseTableInterface::MUTATIONS_CHECK_INTERVAL
      */
-    public function testWaitMutations(int $hasMutationIsTrueTimes, ?int $intervalParam, int $expectedTimeSpent): void
+    public function testWaitMutations(int $hasMutationIsTrueTimes): void
     {
         $hasMutationCallTimes = ($hasMutationIsTrueTimes + 1);
         $hasMutationValues = array_pad([false], -$hasMutationCallTimes, true);
@@ -123,14 +123,9 @@ class TestClickHouseTableTest extends TestCase
             ->expectCall($hasMutationCallTimes)
             ->willReturnValueList($hasMutationValues);
 
-        $testTable = TestClickHouseTable::getInstance();
+        ConstantMocker::mock(AbstractClickHouseTable::class, 'MUTATIONS_CHECK_INTERVAL', 0);
 
-        $startedAt = time();
-
-        $testTable->waitMutations($intervalParam);
-
-        $timeSpent = (time() - $startedAt);
-        self::assertEquals($expectedTimeSpent, $timeSpent);
+        TestClickHouseTable::getInstance()->waitMutations();
     }
 
     /** @inerhitDoc */
@@ -164,14 +159,14 @@ class TestClickHouseTableTest extends TestCase
     }
 
     /**
-     * @return array<array{int, int|null, int}>
+     * @return array<array{int}>
      */
     public function waitMutationsProvider(): array
     {
         return [
-            'Дефолтный `$interval`' => [1, null, 4],
-            'Кастомный `$interval`' => [4, 1, 5],
-            'Отсутствие мутаций' => [0, 3, 3],
+            'hasMutations * 1' => [1],
+            'hasMutations * 4' => [4],
+            'hasMutations * 0' => [0],
         ];
     }
 }
