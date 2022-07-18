@@ -106,7 +106,7 @@ class TestClickHouseTableTest extends TestCase
     /**
      * Тестируем `waitMutations`.
      *
-     * @param int $hasMutationTimes
+     * @param int $hasMutationIsTrueTimes
      * @param positive-int|null $intervalParam
      * @param positive-int $expectedTimeSpent
      * @return void
@@ -114,11 +114,11 @@ class TestClickHouseTableTest extends TestCase
      * @covers \Eggheads\CakephpClickHouse\AbstractClickHouseTable::waitMutations()
      * @uses AbstractClickHouseTable::hasMutations()
      */
-    public function testWaitMutations(int $hasMutationTimes, ?int $intervalParam, int $expectedTimeSpent): void
+    public function testWaitMutations(int $hasMutationIsTrueTimes, ?int $intervalParam, int $expectedTimeSpent): void
     {
-        $hasMutationValues = array_merge(array_fill(0, $hasMutationTimes, true), [false]);
+        $hasMutationValues = array_merge(array_fill(0, $hasMutationIsTrueTimes, true), [false]);
         MethodMocker::mock(AbstractClickHouseTable::class, 'hasMutations')
-            ->expectCall($hasMutationTimes + 1)
+            ->expectCall($hasMutationIsTrueTimes + 1)
             ->willReturnValueList($hasMutationValues);
 
         $testTable = TestClickHouseTable::getInstance();
