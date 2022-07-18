@@ -7,6 +7,7 @@ use Cake\Cache\Cache;
 use Cake\TestSuite\TestCase;
 use Eggheads\CakephpClickHouse\AbstractClickHouseTable;
 use Eggheads\CakephpClickHouse\ClickHouse;
+use Eggheads\Mocks\ConstantMocker;
 use Eggheads\Mocks\MethodMocker;
 use function PHPUnit\Framework\assertEquals;
 
@@ -158,6 +159,7 @@ class TestClickHouseTableTest extends TestCase
     {
         parent::tearDown();
 
+        ConstantMocker::restore();
         MethodMocker::restore($this->hasFailed());
     }
 
