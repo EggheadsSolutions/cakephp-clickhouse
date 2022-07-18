@@ -13,9 +13,6 @@ use RuntimeException;
 
 abstract class AbstractClickHouseTable implements ClickHouseTableInterface
 {
-    /** @var int Сколько секунд ждать между проверками на выполнение мутации */
-    private const WAIT_MUTATIONS_TIMEOUT = 5;
-
     /** @var string Имя таблицы в БД */
     public const TABLE = '';
     /** @var string Название конфигурации для чтения */
@@ -147,9 +144,16 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     }
 
     /** @inheritdoc */
-    public function deleteAll(string $conditions): void
+    public function deleteAll(string $conditions, array $bindings = []): void
     {
-        $this->_getWriter()->getClient()->write('ALTER TABLE ' . static::TABLE . ' DELETE WHERE ' . $conditions);
+        $this->_getWriter()->getClient()->write('ALTER TABLE ' . static::TABLE . ' DELETE WHERE ' . $conditions, $bindings);
+    }
+
+    /** @inheritdoc */
+    public function deleteAllSync(string $conditions, array $bindings = []): void
+    {
+        $this->deleteAll($conditions, $bindings);
+        $this->waitMutations();
     }
 
     /** @inheritdoc */
@@ -179,16 +183,6 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     }
 
     /** @inheritdoc */
-    public function deleteAllSync(string $conditions): void
-    {
-        $this->deleteAll($conditions);
-        sleep(self::WAIT_MUTATIONS_TIMEOUT);
-        while ($this->hasMutations()) {
-            sleep(self::WAIT_MUTATIONS_TIMEOUT);
-        }
-    }
-
-    /** @inheritdoc */
     public function hasMutations(): bool
     {
         return $this->_getWriter()
@@ -199,6 +193,14 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
                         'table' => static::TABLE,
                     ]
                 )->fetchOne('cnt') > 0;
+    }
+
+    /** @inheritdoc */
+    public function waitMutations(): void
+    {
+        do {
+            sleep(static::MUTATIONS_CHECK_INTERVAL);
+        } while ($this->hasMutations());
     }
 
     /** @inheritdoc */

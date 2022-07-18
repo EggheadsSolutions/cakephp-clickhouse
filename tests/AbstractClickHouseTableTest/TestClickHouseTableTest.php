@@ -7,6 +7,9 @@ use Cake\Cache\Cache;
 use Cake\TestSuite\TestCase;
 use Eggheads\CakephpClickHouse\AbstractClickHouseTable;
 use Eggheads\CakephpClickHouse\ClickHouse;
+use Eggheads\CakephpClickHouse\ClickHouseTableInterface;
+use Eggheads\Mocks\ConstantMocker;
+use Eggheads\Mocks\MethodMocker;
 use function PHPUnit\Framework\assertEquals;
 
 class TestClickHouseTableTest extends TestCase
@@ -51,7 +54,7 @@ class TestClickHouseTableTest extends TestCase
 
         assertEquals('2020-08-04', $testTable->getMaxDate('created')->toDateString());
 
-        $testTable->deleteAll("id = '1'");
+        $testTable->deleteAll("id = :id", ['id' => '1']);
         sleep(1);
         self::assertEquals([$svData[1]], $testTable->select($selectAllQuery)->rows());
 
@@ -88,7 +91,7 @@ class TestClickHouseTableTest extends TestCase
         $selectAllQuery = 'SELECT * FROM ' . $testTable::TABLE;
 
         self::assertNotEmpty($testTable->select($selectAllQuery)->rows());
-        $testTable->deleteAllSync("id > '0'");
+        $testTable->deleteAllSync("id > :aboveId", ['aboveId' => '0']);
         self::assertEmpty($testTable->select($selectAllQuery)->rows());
     }
 
@@ -100,6 +103,29 @@ class TestClickHouseTableTest extends TestCase
     public function testGetTableName(): void
     {
         self::assertEquals('default.testTable', TestClickHouseTable::getInstance()->getTableName());
+    }
+
+    /**
+     * Тестируем `waitMutations`.
+     *
+     * @param int $hasMutationIsTrueTimes
+     * @return void
+     * @dataProvider waitMutationsProvider
+     * @covers \Eggheads\CakephpClickHouse\AbstractClickHouseTable::waitMutations()
+     * @uses AbstractClickHouseTable::hasMutations()
+     * @uses ClickHouseTableInterface::MUTATIONS_CHECK_INTERVAL
+     */
+    public function testWaitMutations(int $hasMutationIsTrueTimes): void
+    {
+        $hasMutationCallTimes = ($hasMutationIsTrueTimes + 1);
+        $hasMutationValues = array_pad([false], -$hasMutationCallTimes, true);
+        MethodMocker::mock(AbstractClickHouseTable::class, 'hasMutations')
+            ->expectCall($hasMutationCallTimes)
+            ->willReturnValueList($hasMutationValues);
+
+        ConstantMocker::mock(AbstractClickHouseTable::class, 'MUTATIONS_CHECK_INTERVAL', 0);
+
+        TestClickHouseTable::getInstance()->waitMutations();
     }
 
     /** @inerhitDoc */
@@ -121,5 +147,26 @@ class TestClickHouseTableTest extends TestCase
         );
 
         Cache::disable();
+    }
+
+    /** @inheritDoc */
+    public function tearDown(): void
+    {
+        parent::tearDown();
+
+        ConstantMocker::restore();
+        MethodMocker::restore($this->hasFailed());
+    }
+
+    /**
+     * @return array<array{int}>
+     */
+    public function waitMutationsProvider(): array
+    {
+        return [
+            'hasMutations * 1' => [1],
+            'hasMutations * 4' => [4],
+            'hasMutations * 0' => [0],
+        ];
     }
 }

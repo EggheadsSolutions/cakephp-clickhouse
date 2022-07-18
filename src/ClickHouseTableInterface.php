@@ -14,6 +14,9 @@ use RuntimeException;
  */
 interface ClickHouseTableInterface
 {
+    /** @var positive-int Количество секунд - интервал ожидания между проверками завершения мутаций. */
+    public const MUTATIONS_CHECK_INTERVAL = 5;
+
     /**
      * Проверяем поле на существование в таблице
      *
@@ -75,9 +78,19 @@ interface ClickHouseTableInterface
      * Удаляем данные
      *
      * @param string $conditions
-     * @void void
+     * @param mixed[] $bindings
+     * @return void
      */
-    public function deleteAll(string $conditions): void;
+    public function deleteAll(string $conditions, array $bindings = []): void;
+
+    /**
+     * Удаляем данные и удостоверяемся о завершении всех мутаций
+     *
+     * @param string $conditions
+     * @param mixed[] $bindings
+     * @return void
+     */
+    public function deleteAllSync(string $conditions, array $bindings = []): void;
 
     /**
      * Внеплановое слияние кусков данных для таблиц
@@ -103,19 +116,18 @@ interface ClickHouseTableInterface
     public function getTotal(ChronosInterface $workDate, string $dateColumn = 'checkDate'): int;
 
     /**
-     * Удаляем данные и удостоверяемся о завершении всех мутаций
-     *
-     * @param string $conditions
-     * @return void
-     */
-    public function deleteAllSync(string $conditions): void;
-
-    /**
      * Проверяем, есть ли у таблицы мутации на текущий момент
      *
      * @return bool
      */
     public function hasMutations(): bool;
+
+    /**
+     * Ждём завершения мутаций выполняя проверку каждые `static::MUTATIONS_CHECK_INTERVAL` секунд.
+     *
+     * @return void
+     */
+    public function waitMutations(): void;
 
     /**
      * Получаю максимальную дату наличия записей
