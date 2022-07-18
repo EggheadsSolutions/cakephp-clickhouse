@@ -116,9 +116,10 @@ class TestClickHouseTableTest extends TestCase
      */
     public function testWaitMutations(int $hasMutationIsTrueTimes, ?int $intervalParam, int $expectedTimeSpent): void
     {
-        $hasMutationValues = array_pad([false], -($hasMutationIsTrueTimes + 1), true);
+        $hasMutationCallTimes = ($hasMutationIsTrueTimes + 1);
+        $hasMutationValues = array_pad([false], -$hasMutationCallTimes, true);
         MethodMocker::mock(AbstractClickHouseTable::class, 'hasMutations')
-            ->expectCall($hasMutationIsTrueTimes + 1)
+            ->expectCall($hasMutationCallTimes)
             ->willReturnValueList($hasMutationValues);
 
         $testTable = TestClickHouseTable::getInstance();
