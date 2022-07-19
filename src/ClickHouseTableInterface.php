@@ -17,6 +17,9 @@ interface ClickHouseTableInterface
     /** @var positive-int Количество секунд - интервал ожидания между проверками завершения мутаций. */
     public const MUTATIONS_CHECK_INTERVAL = 5;
 
+    /** @var int Максимальное кол-во частей, на которых можно произвести разбиение таблицы */
+    public const MAX_CHUNKS = 10;
+
     /**
      * Проверяем поле на существование в таблице
      *
@@ -154,4 +157,20 @@ interface ClickHouseTableInterface
      * @return string
      */
     public function getTableName(?bool $isReaderConfig = true): string;
+
+    /**
+     * Возвращает идентификаторы разбиения таблицы на $partsCount примерно равных по размеру частей
+     *
+     * @param string $field По какому полю производится разбиение (должно быть числовым или приведенным к нему)
+     * @param int $chunksCount На сколько частей производится разбиение (по-умолчанию на 2)
+     * @param string $conditions Условие выборки
+     * @param array<string,string|int|float|string[]|int[]|float[]> $bindings
+     * @return string[] массив из $parts-1 идентификаторов, по которому провелось разбиение
+     */
+    public function getChunksIds(
+        string $field,
+        int    $chunksCount = 2,
+        string $conditions = '',
+        array $bindings = []
+    ): array;
 }

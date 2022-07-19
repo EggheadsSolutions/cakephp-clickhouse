@@ -14,6 +14,36 @@ use function PHPUnit\Framework\assertEquals;
 
 class TestClickHouseTableTest extends TestCase
 {
+    /** @inerhitDoc */
+    public function setUp(): void
+    {
+        parent::setUp();
+
+        $writer = ClickHouse::getInstance('writer');
+        $writer->getClient()->write('DROP TABLE IF EXISTS {table}', ['table' => TestClickHouseTable::TABLE]);
+        $writer->getClient()->write(
+            'CREATE TABLE {table}
+            (
+                id      String,
+                url     String,
+                data    Decimal(10, 2),
+                created DateTime
+            ) ENGINE = MergeTree() ORDER BY id',
+            ['table' => TestClickHouseTable::TABLE]
+        );
+
+        Cache::disable();
+    }
+
+    /** @inheritDoc */
+    public function tearDown(): void
+    {
+        parent::tearDown();
+
+        ConstantMocker::restore();
+        MethodMocker::restore($this->hasFailed());
+    }
+
     /**
      * @testdox Тест всего цикла функций
      *
@@ -111,9 +141,9 @@ class TestClickHouseTableTest extends TestCase
      * @param int $hasMutationIsTrueTimes
      * @return void
      * @dataProvider waitMutationsProvider
-     * @covers \Eggheads\CakephpClickHouse\AbstractClickHouseTable::waitMutations()
-     * @uses AbstractClickHouseTable::hasMutations()
-     * @uses ClickHouseTableInterface::MUTATIONS_CHECK_INTERVAL
+     * @covers       \Eggheads\CakephpClickHouse\AbstractClickHouseTable::waitMutations()
+     * @uses         AbstractClickHouseTable::hasMutations()
+     * @uses         ClickHouseTableInterface::MUTATIONS_CHECK_INTERVAL
      */
     public function testWaitMutations(int $hasMutationIsTrueTimes): void
     {
@@ -128,34 +158,38 @@ class TestClickHouseTableTest extends TestCase
         TestClickHouseTable::getInstance()->waitMutations();
     }
 
-    /** @inerhitDoc */
-    public function setUp(): void
+    /**
+     * Тестируем getChunksIds
+     *
+     * @return void
+     * @see AbstractClickHouseTable::getChunksIds()
+     */
+    public function testGetChunksIds(): void
     {
-        parent::setUp();
+        $testTable = TestClickHouseTable::getInstance();
 
-        $writer = ClickHouse::getInstance('writer');
-        $writer->getClient()->write('DROP TABLE IF EXISTS {table}', ['table' => TestClickHouseTable::TABLE]);
-        $writer->getClient()->write(
-            'CREATE TABLE {table}
-            (
-                id      String,
-                url     String,
-                data    Decimal(10, 2),
-                created DateTime
-            ) ENGINE = MergeTree() ORDER BY id',
-            ['table' => TestClickHouseTable::TABLE]
-        );
+        $svData = [];
+        for ($iCounter = 0; $iCounter <= 100; $iCounter++) {
+            if ($iCounter > 10 && $iCounter <= 30) {
+                continue;
+            }
 
-        Cache::disable();
-    }
+            $svData[] = [
+                'id' => (string)$iCounter,
+                'url' => '',
+                'data' => 0,
+                'created' => '2020-08-04 09:00:00',
+            ];
+        }
+        $testTable->insert($svData);
 
-    /** @inheritDoc */
-    public function tearDown(): void
-    {
-        parent::tearDown();
+        self::assertEquals(['40', '60', '80'], $testTable->getChunksIds('toUInt8(id)', 4));
+        self::assertEquals('60', $testTable->getChunksIds('toUInt8(id)')[0]);
+        self::assertEquals('72.5', $testTable->getChunksIds('toUInt8(id)', 2, 'id >= :maxId', ['maxId' => '50'])[0]);
+        self::assertCount(9, $testTable->getChunksIds('toUInt8(id)', 10));
 
-        ConstantMocker::restore();
-        MethodMocker::restore($this->hasFailed());
+        $this->expectExceptionMessage('Неверный параметр chunksCount');
+        $testTable->getChunksIds('', 1);
     }
 
     /**
