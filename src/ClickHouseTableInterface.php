@@ -17,6 +17,9 @@ interface ClickHouseTableInterface
     /** @var positive-int Количество секунд - интервал ожидания между проверками завершения мутаций. */
     public const MUTATIONS_CHECK_INTERVAL = 5;
 
+    /** @var int Максимальное кол-во частей, на которых можно произвести разбиение таблицы */
+    public const MAX_CHUNKS = 10;
+
     /**
      * Проверяем поле на существование в таблице
      *

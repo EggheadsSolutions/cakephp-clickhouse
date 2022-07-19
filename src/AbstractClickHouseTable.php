@@ -237,7 +237,7 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
         string $conditions = '',
         array  $bindings = []
     ): array {
-        if ($chunksCount <= 1 || $chunksCount > 10) {
+        if ($chunksCount <= 1 || $chunksCount > ClickHouseTableInterface::MAX_CHUNKS) {
             throw new LogicException('Неверный параметр chunksCount');
         }
         $sql = '
