@@ -254,8 +254,7 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
                     'table' => $this->getTableName(),
                     'field' => $field,
                     'quantile' => $quantile,
-                ]
-            )->fetchOne('quantile');
+                ])->fetchOne('quantile');
         }
         return $result;
     }
