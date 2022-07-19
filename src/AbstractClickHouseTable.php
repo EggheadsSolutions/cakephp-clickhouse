@@ -230,6 +230,36 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
         return $clickHouse->getClient()->settings()->getDatabase() . '.' . static::TABLE;
     }
 
+    /** @inheritdoc */
+    public function getChunksIds(
+        string $field,
+        int    $chunksCount = 2,
+        string $conditions = '',
+        array  $bindings = []
+    ): array {
+        if ($chunksCount <= 1 || $chunksCount > 10) {
+            throw new LogicException('Неверный параметр chunksCount');
+        }
+        $sql = '
+            SELECT quantile(:quantile)({field}) quantile
+            FROM {table}
+        ';
+        if (!empty($conditions)) {
+            $sql .= 'WHERE ' . $conditions;
+        }
+        $delta = 1 / $chunksCount;
+        $result = [];
+        for ($quantile = $delta; 1 - $quantile > 0.001; $quantile += $delta) {
+            $result[] = (string)$this->select($sql, $bindings + [
+                    'table' => $this->getTableName(),
+                    'field' => $field,
+                    'quantile' => $quantile,
+                ]
+            )->fetchOne('quantile');
+        }
+        return $result;
+    }
+
     /**
      * Подчищаем инстанс, если объект уничтожили
      */
