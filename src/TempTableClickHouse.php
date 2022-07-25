@@ -9,6 +9,19 @@ use Cake\I18n\FrozenTime;
 /**
  * Класс для создания временной таблицы типа Memory
  *
+ * В Конфигурации проекта необходимо прописать настройки temp профиля
+ * Пример:
+ * 'temp' => [
+ *    'host' => 'example.com',
+ *    'port' => '80',
+ *    'username' => 'default',
+ *    'password' => '',
+ *    'database' => 'default',
+ * ],
+ *
+ * так же можно указать префикс для создаваемых таблиц.
+ * Пример: 'tempTableClickHousePrefix': 'test'
+ *
  * @see https://clickhouse.com/docs/ru/engines/table-engines/special/memory
  * @SuppressWarnings(PHPMD.MethodMix)
  */
