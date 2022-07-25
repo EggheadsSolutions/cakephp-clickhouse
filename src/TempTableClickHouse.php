@@ -15,9 +15,9 @@ use Cake\I18n\FrozenTime;
 class TempTableClickHouse
 {
     /**
-     * Префикс названия создаваемой таблицы
+     * Префикс названия создаваемой таблицы по-умолчанию
      */
-    private const PREFIX = 'temp';
+    private const DEFAULT_PREFIX = 'temp';
 
     /** @var string Название конфигурации с префиксом временной таблицы */
     private const TEMP_TABLE_PREFIX_SETTING = 'tempTableClickHousePrefix';
@@ -85,7 +85,7 @@ class TempTableClickHouse
     {
         $date = FrozenTime::now();
 
-        $prefix = Configure::read(self::TEMP_TABLE_PREFIX_SETTING) ?? self::PREFIX;
+        $prefix = Configure::read(self::TEMP_TABLE_PREFIX_SETTING) ?? self::DEFAULT_PREFIX;
         $this->_name = $prefix . ucfirst($name) . '_' . $date->format('ymdHis') . '_' . $date->microsecond;
         $this->_clickHouse = ClickHouse::getInstance($profile);
 
