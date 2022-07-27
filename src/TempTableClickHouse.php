@@ -3,10 +3,24 @@ declare(strict_types=1);
 
 namespace Eggheads\CakephpClickHouse;
 
+use Cake\Core\Configure;
 use Cake\I18n\FrozenTime;
 
 /**
  * Класс для создания временной таблицы типа Memory
+ *
+ * В Конфигурации проекта необходимо прописать настройки temp профиля
+ * Пример:
+ * 'temp' => [
+ *    'host' => 'example.com',
+ *    'port' => '80',
+ *    'username' => 'default',
+ *    'password' => '',
+ *    'database' => 'default',
+ * ],
+ *
+ * так же можно указать префикс для создаваемых таблиц.
+ * Пример: 'tempTableClickHousePrefix': 'test'
  *
  * @see https://clickhouse.com/docs/ru/engines/table-engines/special/memory
  * @SuppressWarnings(PHPMD.MethodMix)
@@ -14,9 +28,15 @@ use Cake\I18n\FrozenTime;
 class TempTableClickHouse
 {
     /**
-     * Префикс названия создаваемой таблицы
+     * Префикс названия создаваемой таблицы по-умолчанию
      */
-    private const PREFIX = 'temp';
+    private const DEFAULT_PREFIX = 'temp';
+
+    /** @var string Название конфигурации с префиксом временной таблицы */
+    private const TEMP_TABLE_PREFIX_SETTING = 'tempTableClickHousePrefix';
+
+    /** @var string Профиль по-умолчанию */
+    private const DEFAULT_PROFILE = 'temp';
 
     /**
      * Имя временной таблицы
@@ -54,7 +74,7 @@ class TempTableClickHouse
         ClickHouseTableInterface $sourceTable,
         string                   $fillQuery = '',
         array                    $bindings = [],
-        string                   $profile = 'default'
+        string                   $profile = self::DEFAULT_PROFILE
     ): self {
         return new self(
             $name,
@@ -74,10 +94,12 @@ class TempTableClickHouse
      *
      * @example new TempTableClickHouse('tableName', ['id' => 'int'], 'SELECT :id', ['id' => 123], 'writer');
      */
-    public function __construct(string $name, array $typeMap, string $fillQuery = '', array $bindings = [], string $profile = 'default')
+    public function __construct(string $name, array $typeMap, string $fillQuery = '', array $bindings = [], string $profile = self::DEFAULT_PROFILE)
     {
         $date = FrozenTime::now();
-        $this->_name = self::PREFIX . ucfirst($name) . '_' . $date->format('ymdHis') . '_' . $date->microsecond;
+
+        $prefix = Configure::read(self::TEMP_TABLE_PREFIX_SETTING) ?? self::DEFAULT_PREFIX;
+        $this->_name = $prefix . ucfirst($name) . '_' . $date->format('ymdHis') . '_' . $date->microsecond;
         $this->_clickHouse = ClickHouse::getInstance($profile);
 
         $this->_create($typeMap);

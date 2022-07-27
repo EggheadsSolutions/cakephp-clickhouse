@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Eggheads\CakephpClickHouse\Tests;
 
+use Cake\Core\Configure;
 use Cake\I18n\FrozenTime;
 use Cake\TestSuite\TestCase;
 use ClickHouseDB\Exception\QueryException;
@@ -30,6 +31,12 @@ class TempTableClickHouseTest extends TestCase
         $result = ClickHouse::getInstance(self::CH_PROFILE)->select('SELECT * FROM ' . $tableName)->rows();
         self::assertCount(1, $result);
         self::assertEquals(['id' => 123, 'field0' => 1], $result[0]);
+
+        /** Проверяем что префикс таблицы переопределяется при наличии в конфигурацц */
+        Configure::write('tempTableClickHousePrefix', 'test');
+        $set = new TempTableClickHouse('Set', ['id' => 'int', 'String'], "SELECT :id, '1'", ['id' => 123], self::CH_PROFILE);
+        $tableName = $set->getName();
+        $this->assertTextContains('testSet_220422184300_0', $tableName);
     }
 
     /**
