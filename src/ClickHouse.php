@@ -25,6 +25,11 @@ final class ClickHouse
     /** @var string[] Возвращаемое значение поля с типом DateTime, если его значение не указано в ClickHouse */
     public const EMPTY_DATE_TIME = ['1970-01-01 00:00:00', '0000-00-00 00:00:00'];
 
+    /** @var array<string, int|string|bool> Настройки по-умолчанию */
+    private const DEFAULT_SETTINGS = [
+        'timeout_before_checking_execution_speed' => false,
+    ];
+
     /**
      * Объект-одиночка
      *
@@ -42,14 +47,20 @@ final class ClickHouse
      * Инициализация подключения к БД
      *
      * @param Client $clickHouse
+     * @param null|array<string, int|string|bool> $settings Массив настроек ключ => значение
      */
-    public function __construct(Client $clickHouse)
+    public function __construct(Client $clickHouse, ?array $settings = null)
     {
         $timeout = $this->_isCli() ? self::CLI_TIMEOUT : self::TIMEOUT;
 
         $clickHouse->setTimeout($timeout);
         $clickHouse->setConnectTimeOut($timeout);
-        $clickHouse->settings()->set('timeout_before_checking_execution_speed', false);
+
+        if (!empty($settings)) {
+            foreach ($settings as $settingName => $settingValue) {
+                $clickHouse->settings()->set($settingName, $settingValue);
+            }
+        }
 
         $this->_client = $clickHouse;
     }
@@ -74,10 +85,12 @@ final class ClickHouse
                 $connectParams = $writers[$profile];
             }
 
+            $connectSettings = ($connectParams['settings'] ?? []) + Configure::read('clickHouseSettings', []) + self::DEFAULT_SETTINGS; // @phpstan-ignore-line
+
             $clickHouse = new Client($connectParams);
             $clickHouse->database($connectParams['database']);
 
-            self::$_instance[$profile] = new self($clickHouse);
+            self::$_instance[$profile] = new self($clickHouse, $connectSettings);
         }
 
         return self::$_instance[$profile];
