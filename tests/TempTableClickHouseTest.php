@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Eggheads\CakephpClickHouse\Tests;
 
+use Cake\Cache\Cache;
 use Cake\Core\Configure;
 use Cake\I18n\FrozenTime;
 use Cake\TestSuite\TestCase;
@@ -17,6 +18,13 @@ use Eggheads\CakephpClickHouse\Tests\AbstractClickHouseTableTest\TestClickHouseT
 class TempTableClickHouseTest extends TestCase
 {
     private const CH_PROFILE = 'writer';
+
+    /** @inerhitDoc */
+    public function setUp(): void
+    {
+        Cache::disable();
+        parent::setUp();
+    }
 
     /**
      * @testdox Проверим создание и заполнение временной таблицы
@@ -63,7 +71,7 @@ class TempTableClickHouseTest extends TestCase
         $table = TempTableClickHouse::createFromTable(
             'clone',
             TestClickHouseTable::getInstance(),
-            "SELECT '1', 'bla-bla', 3.0, '2020-08-04 09:00:00'",
+            "SELECT '1', 'bla-bla', 3.0, '2020-08-04', '2020-08-04 09:00:00'",
             [],
             self::CH_PROFILE
         );
@@ -73,6 +81,7 @@ class TempTableClickHouseTest extends TestCase
                  'id' => '1',
                  'url' => 'bla-bla',
                  'data' => 3.0,
+                 'checkDate' => '2020-08-04',
                  'created' => '2020-08-04 09:00:00',
              ]],
             ClickHouse::getInstance(self::CH_PROFILE)->select('SELECT * FROM ' . $table->getName())->rows()

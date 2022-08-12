@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Eggheads\CakephpClickHouse\Tests\AbstractClickHouseTableTest;
 
 use Cake\Cache\Cache;
+use Cake\I18n\FrozenDate;
 use Cake\TestSuite\TestCase;
 use Eggheads\CakephpClickHouse\AbstractClickHouseTable;
 use Eggheads\CakephpClickHouse\ClickHouse;
@@ -29,6 +30,7 @@ class TestClickHouseTableTest extends TestCase
                 id      String,
                 url     String,
                 data    Decimal(10, 2),
+                checkDate Date,
                 created DateTime
             ) ENGINE = MergeTree() ORDER BY id',
             ['table' => $writerTableName]
@@ -60,6 +62,7 @@ class TestClickHouseTableTest extends TestCase
             'id' => 'String',
             'url' => 'String',
             'data' => 'Decimal(10, 2)',
+            'checkDate' => 'Date',
             'created' => 'DateTime',
         ], $schema);
 
@@ -70,12 +73,14 @@ class TestClickHouseTableTest extends TestCase
                 'id' => '1',
                 'url' => 'bla-bla',
                 'data' => 3.0,
+                'checkDate' => '2020-08-04',
                 'created' => '2020-08-04 09:00:00',
             ],
             [
                 'id' => '2',
                 'url' => 'ggggg',
                 'data' => 5.0,
+                'checkDate' => '2020-08-02',
                 'created' => '2020-08-02 09:00:00',
             ],
         ];
@@ -83,6 +88,11 @@ class TestClickHouseTableTest extends TestCase
 
         $selectAllQuery = 'SELECT * FROM ' . $testTable->getTableName();
         self::assertEquals($svData, $testTable->select($selectAllQuery)->rows());
+
+        self::assertEquals(1, $testTable->getTotal(FrozenDate::parse('2020-08-02')));
+        self::assertTrue($testTable->hasData(FrozenDate::parse('2020-08-02')));
+
+        self::assertFalse($testTable->hasData(FrozenDate::parse('2016-08-02')));
 
         assertEquals('2020-08-04', $testTable->getMaxDate('created')->toDateString());
 
@@ -109,12 +119,14 @@ class TestClickHouseTableTest extends TestCase
                 'id' => '1',
                 'url' => 'bla-bla',
                 'data' => 3.0,
+                'checkDate' => '2020-08-04',
                 'created' => '2020-08-04 09:00:00',
             ],
             [
                 'id' => '2',
                 'url' => 'ggggg',
                 'data' => 5.0,
+                'checkDate' => '2020-08-02',
                 'created' => '2020-08-02 09:00:00',
             ],
         ];
@@ -180,6 +192,7 @@ class TestClickHouseTableTest extends TestCase
                 'id' => (string)$iCounter,
                 'url' => '',
                 'data' => 0,
+                'checkDate' => '2020-08-04',
                 'created' => '2020-08-04 09:00:00',
             ];
         }
