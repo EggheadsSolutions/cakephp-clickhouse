@@ -9,26 +9,59 @@ use Cake\I18n\FrozenDate;
 use ClickHouseDB\Statement;
 use LogicException;
 use OutOfBoundsException;
+use ReflectionClass;
 use RuntimeException;
 
 abstract class AbstractClickHouseTable implements ClickHouseTableInterface
 {
-    /** @var string Имя таблицы в БД */
+    /**
+     * Имя таблицы в БД, указывать только если имя класса не соответствует конвенции @see AbstractClickHouseTable::NAME_CONVENTION
+     *
+     * @var string
+     * @internal
+     */
     public const TABLE = '';
-    /** @var string Название конфигурации для чтения */
+
+    /**
+     * @var string Название конфигурации для чтения
+     */
     public const READER_CONFIG = 'default';
-    /** @var string Название конфигурации для записи */
+
+    /**
+     * @var string Название конфигурации для записи, заполнять только при необходимости записи в таблицу
+     */
     public const WRITER_CONFIG = '';
-    /** Название профиля кеширования  */
+
+    /**
+     * Название профиля кеширования
+     */
     public const CACHE_PROFILE = 'default';
+
+    /**
+     * Регулярка для поиска имени таблицы из названия класса согласно конвенции
+     */
+    private const NAME_CONVENTION = '/^(.+)ClickHouseTable$/';
+
     /**
      * Объект-одиночка
      *
      * @var array<string, static>
      */
-    private static $_instances = [];
-    /** @var null|array<string, string> Схема таблицы ['имя поля' => 'тип'] */
+    private static array $_instances = [];
+
+    /**
+     * Схема таблицы ['имя поля' => 'тип']
+     *
+     * @var null|array<string, string>
+     */
     private ?array $_schema = null;
+
+    /**
+     * Имя таблицы
+     *
+     * @var string
+     */
+    private string $_tableName;
 
     /**
      * AbstractClickHouseTable constructor.
@@ -37,11 +70,25 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
      */
     protected function __construct()
     {
-        if (empty(static::TABLE)) {
-            throw new LogicException('Не задана константа TABLE для класса ' . static::class);
-        }
-        if (empty(static::WRITER_CONFIG)) {
-            throw new LogicException('Не задана константа WRITER_CONFIG для класса ' . static::class);
+        $this->_buildTableName();
+    }
+
+    /**
+     * Формируем имя таблицы на основании имени класса
+     *
+     * @return void
+     */
+    private function _buildTableName(): void
+    {
+        if (!empty(static::TABLE)) {
+            $this->_tableName = static::TABLE;
+        } else {
+            $reflect = new ReflectionClass($this);
+            if (!preg_match(self::NAME_CONVENTION, $reflect->getShortName(), $matches)) {
+                throw new LogicException('Не задана константа TABLE для класса ' . static::class . ' , и класс не соответствует конвенции ' . self::NAME_CONVENTION);
+            }
+
+            $this->_tableName = lcfirst($matches[1]);
         }
     }
 
@@ -68,7 +115,7 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
             return $inFieldName;
         } else {
             if (empty($schema[$defaultField])) {
-                throw new OutOfBoundsException("Поле $defaultField не найдено в таблице " . static::TABLE);
+                throw new OutOfBoundsException("Поле $defaultField не найдено в таблице " . $this->getTableName());
             }
             return $defaultField;
         }
@@ -78,12 +125,12 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     public function getSchema(): array
     {
         if (empty($this->_schema)) {
-            $this->_schema = Cache::remember('ClickHouse-schema#' . static::TABLE, function () {
-                $rows = $this->select('DESCRIBE ' . static::TABLE)->rows();
+            $this->_schema = Cache::remember('ClickHouse-schema#' . $this->getTableName(), function () {
+                $rows = $this->select('DESCRIBE ' . $this->_tableName)->rows();
                 return array_combine(array_column($rows, 'name'), array_column($rows, 'type'));
             }, self::CACHE_PROFILE);
             if (empty($this->_schema)) {
-                throw new RuntimeException('Не могу сформировать схему таблицы ' . static::TABLE);
+                throw new RuntimeException('Не могу сформировать схему таблицы ' . $this->_tableName);
             }
         }
         return $this->_schema;
@@ -118,7 +165,7 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
      */
     public function insert(array $recordOrRecords): Statement
     {
-        return $this->_getWriter()->insertAssoc(static::TABLE, $recordOrRecords);
+        return $this->_getWriter()->insertAssoc($this->_tableName, $recordOrRecords);
     }
 
     /**
@@ -128,25 +175,29 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
      */
     protected function _getWriter(): ClickHouse
     {
+        if (empty(static::WRITER_CONFIG)) {
+            throw new LogicException('Не задана константа WRITER_CONFIG для класса ' . static::class);
+        }
+
         return ClickHouse::getInstance(static::WRITER_CONFIG);
     }
 
     /** @inheritdoc */
     public function createTransaction(): ClickHouseTransaction
     {
-        return new ClickHouseTransaction($this->_getWriter(), static::TABLE, array_keys($this->getSchema()));
+        return new ClickHouseTransaction($this->_getWriter(), $this->_tableName, array_keys($this->getSchema()));
     }
 
     /** @inheritdoc */
     public function truncate(): void
     {
-        $this->_getWriter()->getClient()->write('TRUNCATE TABLE ' . static::TABLE);
+        $this->_getWriter()->getClient()->write('TRUNCATE TABLE ' . $this->_tableName);
     }
 
     /** @inheritdoc */
     public function deleteAll(string $conditions, array $bindings = []): void
     {
-        $this->_getWriter()->getClient()->write('ALTER TABLE ' . static::TABLE . ' DELETE WHERE ' . $conditions, $bindings);
+        $this->_getWriter()->getClient()->write('ALTER TABLE ' . $this->_tableName . ' DELETE WHERE ' . $conditions, $bindings);
     }
 
     /** @inheritdoc */
@@ -159,7 +210,7 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     /** @inheritdoc */
     public function optimize(): void
     {
-        $this->_getWriter()->getClient()->write('OPTIMIZE TABLE {me}', ['me' => static::TABLE]);
+        $this->_getWriter()->getClient()->write('OPTIMIZE TABLE {me}', ['me' => $this->_tableName]);
     }
 
     /** @inheritdoc */
@@ -176,7 +227,7 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
                 'SELECT count() cnt FROM {me} WHERE {dateColumn}=:workDateString',
                 [
                     'dateColumn' => $dateColumn,
-                    'me' => static::TABLE,
+                    'me' => $this->_tableName,
                     'workDateString' => $workDate->toDateString(),
                 ]
             )->fetchOne('cnt');
@@ -190,7 +241,7 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
                     'SELECT count() cnt FROM system.mutations WHERE database=:writerDB AND table=:table AND is_done=0',
                     [
                         'writerDB' => $this->_getWriter()->getClient()->settings()->getDatabase(),
-                        'table' => static::TABLE,
+                        'table' => $this->_tableName,
                     ]
                 )->fetchOne('cnt') > 0;
     }
@@ -208,7 +259,7 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     {
         $maxDate = $this->select(
             'SELECT if(toYear(max({dateColumn})) > 2000, max({dateColumn}), null) maxDate FROM {table}',
-            ['table' => static::TABLE, 'dateColumn' => $dateColumn]
+            ['table' => $this->_tableName, 'dateColumn' => $dateColumn]
         )
             ->fetchOne('maxDate');
         return !empty($maxDate) ? FrozenDate::parse($maxDate) : null;
@@ -227,7 +278,7 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     public function getTableName(?bool $isReaderConfig = true): string
     {
         $clickHouse = $isReaderConfig ? $this->_getReader() : $this->_getWriter();
-        return $clickHouse->getClient()->settings()->getDatabase() . '.' . static::TABLE;
+        return $clickHouse->getClient()->settings()->getDatabase() . '.' . $this->_tableName;
     }
 
     /** @inheritdoc */
