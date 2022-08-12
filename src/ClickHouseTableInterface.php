@@ -165,7 +165,7 @@ interface ClickHouseTableInterface
      * @param int $chunksCount На сколько частей производится разбиение (по-умолчанию на 2)
      * @param string $conditions Условие выборки
      * @param array<string,string|int|float|string[]|int[]|float[]> $bindings
-     * @return string[] массив из $parts-1 идентификаторов, по которому провелось разбиение
+     * @return string[] Массив из $parts-1 идентификаторов, по которому выполнилось разбиение
      */
     public function getChunksIds(
         string $field,

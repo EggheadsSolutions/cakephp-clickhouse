@@ -11,7 +11,5 @@ use Eggheads\CakephpClickHouse\AbstractClickHouseTable;
 class TestClickHouseTable extends AbstractClickHouseTable
 {
     /** @inerhitDoc */
-    public const TABLE = 'testTable';
-    /** @inerhitDoc */
     public const WRITER_CONFIG = 'ssdNode';
 }

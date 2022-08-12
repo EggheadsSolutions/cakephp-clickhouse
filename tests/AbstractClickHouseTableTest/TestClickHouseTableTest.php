@@ -20,7 +20,9 @@ class TestClickHouseTableTest extends TestCase
         parent::setUp();
 
         $writer = ClickHouse::getInstance('writer');
-        $writer->getClient()->write('DROP TABLE IF EXISTS {table}', ['table' => TestClickHouseTable::TABLE]);
+        $writerTableName = TestClickHouseTable::getInstance()->getTableName(false);
+
+        $writer->getClient()->write('DROP TABLE IF EXISTS {table}', ['table' => $writerTableName]);
         $writer->getClient()->write(
             'CREATE TABLE {table}
             (
@@ -29,7 +31,7 @@ class TestClickHouseTableTest extends TestCase
                 data    Decimal(10, 2),
                 created DateTime
             ) ENGINE = MergeTree() ORDER BY id',
-            ['table' => TestClickHouseTable::TABLE]
+            ['table' => $writerTableName]
         );
 
         Cache::disable();
@@ -79,7 +81,7 @@ class TestClickHouseTableTest extends TestCase
         ];
         $testTable->insert($svData);
 
-        $selectAllQuery = 'SELECT * FROM ' . $testTable::TABLE;
+        $selectAllQuery = 'SELECT * FROM ' . $testTable->getTableName();
         self::assertEquals($svData, $testTable->select($selectAllQuery)->rows());
 
         assertEquals('2020-08-04', $testTable->getMaxDate('created')->toDateString());
@@ -118,7 +120,7 @@ class TestClickHouseTableTest extends TestCase
         ];
         $testTable->insert($svData);
 
-        $selectAllQuery = 'SELECT * FROM ' . $testTable::TABLE;
+        $selectAllQuery = 'SELECT * FROM ' . $testTable->getTableName();
 
         self::assertNotEmpty($testTable->select($selectAllQuery)->rows());
         $testTable->deleteAllSync("id > :aboveId", ['aboveId' => '0']);
@@ -132,7 +134,7 @@ class TestClickHouseTableTest extends TestCase
      */
     public function testGetTableName(): void
     {
-        self::assertEquals('default.testTable', TestClickHouseTable::getInstance()->getTableName());
+        self::assertEquals('default.test', TestClickHouseTable::getInstance()->getTableName());
     }
 
     /**

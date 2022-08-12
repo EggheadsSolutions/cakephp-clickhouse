@@ -2,9 +2,9 @@
 
 Либа подключается через композер:
 
-`./composer.phar require eggheads.solutions/cakephp-clickhouse`
+`./composer.phar require eggheads/cakephp-clickhouse`
 или
-`composer require eggheads.solutions/cakephp-clickhouse`
+`composer require eggheads/cakephp-clickhouse`
 
 Для подключения к CH требуется настройка стандартного конфига в CakePHP. Обязательно должны присутствовать 2
 элемента: `clickHouseServer` и `clickHouseWriters`. Пример конфига:
@@ -37,6 +37,8 @@ return [
 ];
 ```
 
+Конвенция именования классов: _ИмяТаблицыClickHouseTable_ соответствутет таблице _имяТаблицы_ на сервере.
+
 Пример класса таблицы:
 
 ```php
@@ -49,8 +51,9 @@ use Eggheads\CakephpClickHouse\AbstractClickHouseTable;
 
 class WbProductsClickHouseTable extends AbstractClickHouseTable
 {
-    public const TABLE = 'wbProducts';
-    public const WRITER_CONFIG = 'ssdNode';
+    public const TABLE = 'wbProducts'; // указывать, если имя таблицы отличается от *ClickHouseTable
+    public const READER_CONFIG = 'anotherNode'; // указывать в случае в случае работы с другим сервером (не clickHouseServer из конфигурации)
+    public const WRITER_CONFIG = 'ssdNode'; // указывать в случае необходимости записи в таблицу
 
     /** @var int Размер порции данных при отправке в транзакции */
     private const PAGE_SIZE = 100000;
@@ -76,6 +79,22 @@ class WbProductsClickHouseTable extends AbstractClickHouseTable
             $transaction->rollback();
         }
     }
+}
+```
+
+Пример минимально необходимого класса, который именуется согласно конвенции, и используется только для чтения:
+
+```php
+<?php
+declare(strict_types=1);
+
+namespace App\Lib\ClickHouse\Table;
+
+use Eggheads\CakephpClickHouse\AbstractClickHouseTable;
+
+class WbProductsClickHouseTable extends AbstractClickHouseTable
+{
+
 }
 ```
 
@@ -110,12 +129,12 @@ MethodMocker::mock(AbstractClickHouseTable::class, 'select')
 
 ```php
 ClickHouse::getInstance()->select("
-SELECT * FROM wbCabinetRealizationDelivery
-WHERE realizationId GLOBAL IN (SELECT DISTINCT realizationId
-FROM wbCabinetSupplierDelivery
-WHERE wbConfigId IN (4)
-  AND deliveryDate BETWEEN '2022-03-01' AND '2022-03-05')
-GROUP BY checkDate, wbId")->rows();
+    SELECT * FROM wbCabinetRealizationDelivery
+    WHERE realizationId GLOBAL IN (SELECT DISTINCT realizationId
+    FROM wbCabinetSupplierDelivery
+    WHERE wbConfigId IN (4)
+      AND deliveryDate BETWEEN '2022-03-01' AND '2022-03-05')
+    GROUP BY checkDate, wbId")->rows();
 ```
 
 Где подзапрос может повторяться несколько раз, можно применить промежуточную временную таблицу
@@ -128,8 +147,7 @@ $set = new TempTableClickHouse(
     "SELECT DISTINCT realizationId
     FROM wbCabinetSupplierDelivery
     WHERE wbConfigId IN (4)
-      AND deliveryDate BETWEEN '2022-03-01' AND '2022-03-05'",
-    'default'
+      AND deliveryDate BETWEEN '2022-03-01' AND '2022-03-05'"
 );
 
 $ch = ClickHouse::getInstance();
@@ -143,3 +161,13 @@ $ch->select('SELECT testId FROM '. $set->getName())
 
 Таким образом _TempTableClickHouse_ создаёт временную таблицу, которая участвует в нескольких местах сложного запроса,
 например, при выборке _IN_. А после выполнения скрипта временная таблица удаляется через деструктор.
+
+Если необходимо создать временную таблицу на основе существующей:
+
+```php
+$table = TempTableClickHouse::createFromTable(
+    'clone',
+    TestClickHouseTable::getInstance(),
+    "SELECT '1', 'bla-bla', 3.0, '2020-08-04 09:00:00'"
+);
+```
