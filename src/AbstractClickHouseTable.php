@@ -74,6 +74,21 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     }
 
     /**
+     * Возвращает объект-одиночку
+     *
+     * @return static
+     */
+    public static function getInstance(): self
+    {
+        $className = static::class;
+        if (empty(self::$_instances[$className])) {
+            self::$_instances[$className] = new static(); //@phpstan-ignore-line
+        }
+
+        return self::$_instances[$className];
+    }
+
+    /**
      * Формируем имя таблицы на основании имени класса
      *
      * @return void
@@ -93,18 +108,14 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     }
 
     /**
-     * Возвращает объект-одиночку
+     * Возвращает имя таблицы без префикса БД.
      *
-     * @return static
+     * @return string
+     * @internal
      */
-    public static function getInstance(): self
+    protected function _getNamePart(): string
     {
-        $className = static::class;
-        if (empty(self::$_instances[$className])) {
-            self::$_instances[$className] = new static(); //@phpstan-ignore-line
-        }
-
-        return self::$_instances[$className];
+        return $this->_tableName;
     }
 
     /** @inheritdoc */
@@ -126,11 +137,11 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     {
         if (empty($this->_schema)) {
             $this->_schema = Cache::remember('ClickHouse-schema#' . $this->getTableName(), function () {
-                $rows = $this->select('DESCRIBE ' . $this->_tableName)->rows();
+                $rows = $this->select('DESCRIBE ' . $this->_getNamePart())->rows();
                 return array_combine(array_column($rows, 'name'), array_column($rows, 'type'));
             }, self::CACHE_PROFILE);
             if (empty($this->_schema)) {
-                throw new RuntimeException('Не могу сформировать схему таблицы ' . $this->_tableName);
+                throw new RuntimeException('Не могу сформировать схему таблицы ' . $this->_getNamePart());
             }
         }
         return $this->_schema;
@@ -165,7 +176,7 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
      */
     public function insert(array $recordOrRecords): Statement
     {
-        return $this->_getWriter()->insertAssoc($this->_tableName, $recordOrRecords);
+        return $this->_getWriter()->insertAssoc($this->_getNamePart(), $recordOrRecords);
     }
 
     /**
@@ -185,19 +196,19 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     /** @inheritdoc */
     public function createTransaction(): ClickHouseTransaction
     {
-        return new ClickHouseTransaction($this->_getWriter(), $this->_tableName, array_keys($this->getSchema()));
+        return new ClickHouseTransaction($this->_getWriter(), $this->_getNamePart(), array_keys($this->getSchema()));
     }
 
     /** @inheritdoc */
     public function truncate(): void
     {
-        $this->_getWriter()->getClient()->write('TRUNCATE TABLE ' . $this->_tableName);
+        $this->_getWriter()->getClient()->write('TRUNCATE TABLE ' . $this->_getNamePart());
     }
 
     /** @inheritdoc */
     public function deleteAll(string $conditions, array $bindings = []): void
     {
-        $this->_getWriter()->getClient()->write('ALTER TABLE ' . $this->_tableName . ' DELETE WHERE ' . $conditions, $bindings);
+        $this->_getWriter()->getClient()->write('ALTER TABLE ' . $this->_getNamePart() . ' DELETE WHERE ' . $conditions, $bindings);
     }
 
     /** @inheritdoc */
@@ -210,7 +221,7 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     /** @inheritdoc */
     public function optimize(): void
     {
-        $this->_getWriter()->getClient()->write('OPTIMIZE TABLE {me}', ['me' => $this->_tableName]);
+        $this->_getWriter()->getClient()->write('OPTIMIZE TABLE {me}', ['me' => $this->_getNamePart()]);
     }
 
     /** @inheritdoc */
@@ -227,7 +238,7 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
                 'SELECT count() cnt FROM {me} WHERE {dateColumn}=:workDateString',
                 [
                     'dateColumn' => $dateColumn,
-                    'me' => $this->_tableName,
+                    'me' => $this->_getNamePart(),
                     'workDateString' => $workDate->toDateString(),
                 ]
             )->fetchOne('cnt');
@@ -241,7 +252,7 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
                     'SELECT count() cnt FROM system.mutations WHERE database=:writerDB AND table=:table AND is_done=0',
                     [
                         'writerDB' => $this->_getWriter()->getClient()->settings()->getDatabase(),
-                        'table' => $this->_tableName,
+                        'table' => $this->_getNamePart(),
                     ]
                 )->fetchOne('cnt') > 0;
     }
@@ -259,7 +270,7 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     {
         $maxDate = $this->select(
             'SELECT if(toYear(max({dateColumn})) > 2000, max({dateColumn}), null) maxDate FROM {table}',
-            ['table' => $this->_tableName, 'dateColumn' => $dateColumn]
+            ['table' => $this->_getNamePart(), 'dateColumn' => $dateColumn]
         )
             ->fetchOne('maxDate');
         return !empty($maxDate) ? FrozenDate::parse($maxDate) : null;
@@ -278,7 +289,7 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     public function getTableName(?bool $isReaderConfig = true): string
     {
         $clickHouse = $isReaderConfig ? $this->_getReader() : $this->_getWriter();
-        return $clickHouse->getClient()->settings()->getDatabase() . '.' . $this->_tableName;
+        return $clickHouse->getClient()->settings()->getDatabase() . '.' . $this->_getNamePart();
     }
 
     /** @inheritdoc */
