@@ -233,15 +233,14 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     /** @inheritdoc */
     public function getTotal(ChronosInterface $workDate, string $dateColumn = 'checkDate'): int
     {
-        return (int)$this->_getWriter()
-            ->select(
-                'SELECT count() cnt FROM {me} WHERE {dateColumn}=:workDateString',
-                [
-                    'dateColumn' => $dateColumn,
-                    'me' => $this->_getNamePart(),
-                    'workDateString' => $workDate->toDateString(),
-                ]
-            )->fetchOne('cnt');
+        return (int)$this->select(
+            'SELECT count() cnt FROM {me} WHERE {dateColumn}=:workDateString',
+            [
+                'dateColumn' => $dateColumn,
+                'me' => $this->_getNamePart(),
+                'workDateString' => $workDate->toDateString(),
+            ]
+        )->fetchOne('cnt');
     }
 
     /** @inheritdoc */
