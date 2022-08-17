@@ -14,12 +14,12 @@ class ChunksConditionQueryBuilder
      *
      * @var string[]
      */
-    private $_chunks;
+    private array $_chunks;
 
     /**
-     * @param $chunks
+     * @param string[] $chunks
      */
-    public function __construct($chunks)
+    public function __construct(array $chunks)
     {
         if (count($chunks) === 0) {
             throw new InvalidArgumentException('$chunks должно содержать минимум одно значение');
@@ -32,7 +32,7 @@ class ChunksConditionQueryBuilder
      *
      * @param string $conditionField
      * @param string $fieldReplacement
-     * @return array
+     * @return string[]
      */
     public function getConditionsQueryArray(string $conditionField, string $fieldReplacement = '%'): array
     {
@@ -48,7 +48,7 @@ class ChunksConditionQueryBuilder
             }
             if (!is_null($previousChunk)) {
                 $result[] = "$conditionField > " . str_replace(self::ID_REPLACEMENT, $previousChunk, $fieldReplacement) .
-                " AND $conditionField <= " . str_replace(self::ID_REPLACEMENT, $chunk, $fieldReplacement);
+                    " AND $conditionField <= " . str_replace(self::ID_REPLACEMENT, $chunk, $fieldReplacement);
             }
             if ($key === array_key_last($this->_chunks)) {
                 $result[] = "$conditionField > " . str_replace(self::ID_REPLACEMENT, $chunk, $fieldReplacement);
