@@ -7,6 +7,7 @@ use InvalidArgumentException;
 
 class ChunksConditionQueryBuilder
 {
+    /** @var string Заменитель для ид */
     public const ID_REPLACEMENT = '%';
 
     /**
