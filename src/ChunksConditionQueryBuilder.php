@@ -51,7 +51,7 @@ class ChunksConditionQueryBuilder
      *
      * @param int $partsCount число разбиений
      * @param string $conditionField поле, по которому идет разбиение
-     * @return array
+     * @return string[]
      */
     public function getConditionsQueryByModulo(int $partsCount, string $conditionField): array
     {
