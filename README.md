@@ -227,3 +227,6 @@ MethodMocker::mock(ClickHouseTransaction::class, 'commit')
 MethodMocker::mock(AbstractClickHouseTable::class, 'select')
     ->willReturnValue($this->createMock(Statement::class));
 ```
+
+# Класс ChunksConditionQueryBuilder
+Применяется для построения массива условий при разбиении большого запроса на части. Подробнее можно посмотреть в описании класса.
