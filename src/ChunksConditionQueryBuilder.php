@@ -15,7 +15,7 @@ use InvalidArgumentException;
  *
  * Имеются 2 реализации:
  * 1). Основан на уже готовом разбиении некого поля. (Например разбиением по квантилям)
- * @see \Eggheads\CakephpClickHouse\ClickHouseTableInterface::getChunksIds
+ * @see ClickHouseTableInterface::getChunksIds()
  * 2). Основан на идее, что функция cityHash дает числовое представление с нормальным распределением относительно остатка от деления
  *
  * На выходе всегда массив дополнительных условий для использования в секции WHERE
@@ -31,10 +31,10 @@ class ChunksConditionQueryBuilder
     /**
      * Возвращает массив условий для разбиения по чанкам
      *
-     * @param string[] $chunks ИД границ разбиения, например ['234', '789']
-     * @param string $conditionField
-     * @param string $fieldReplacement
-     * @return string[]
+     * @param string[] $chunks Массив ИД границ разбиения, например ['234', '789']
+     * @param string $conditionField Поле, по которому идёт разбиение
+     * @param string $fieldReplacement Подстановка для сравнения, % заменяется идентификатором границы
+     * @return string[] Массив условий для построения запросов
      */
     public function getConditionsQueryByChunks(array $chunks, string $conditionField, string $fieldReplacement = '%'): array
     {
@@ -67,9 +67,9 @@ class ChunksConditionQueryBuilder
     /**
      * Возвращает массив условий для разбиения на основании остатка от деления хеша
      *
-     * @param int $partsCount число разбиений
-     * @param string $conditionField поле, по которому идет разбиение
-     * @return string[]
+     * @param int $partsCount Число разбиений
+     * @param string $conditionField Поле, по которому идет разбиение
+     * @return string[] Массив условий для построения запросов
      */
     public function getConditionsQueryByModulo(int $partsCount, string $conditionField): array
     {
