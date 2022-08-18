@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Eggheads\CakephpClickHouse;
 
+use Eggheads\CakephpClickHouse\Tests\ChunksConditionQueryBuilderTest\ChunksConditionQueryBuilderTest;
 use InvalidArgumentException;
 
 /**
@@ -18,6 +19,9 @@ use InvalidArgumentException;
  * 2). Основан на идее, что функция cityHash дает числовое представление с нормальным распределением относительно остатка от деления
  *
  * На выходе всегда массив дополнительных условий для использования в секции WHERE
+ *
+ * Примеры использования можно посмотреть в тестах
+ * @see ChunksConditionQueryBuilderTest
  */
 class ChunksConditionQueryBuilder
 {
