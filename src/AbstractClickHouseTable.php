@@ -302,7 +302,7 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
             throw new LogicException('Неверный параметр chunksCount');
         }
         $sql = '
-            SELECT quantile(:quantile)({field}) quantile
+            SELECT toString(quantile(:quantile)({field})) quantile
             FROM {table}
         ';
         if (!empty($conditions)) {
