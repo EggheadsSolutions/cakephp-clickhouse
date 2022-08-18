@@ -9,29 +9,30 @@ use Eggheads\CakephpClickHouse\ChunksConditionQueryBuilder;
 class ChunksConditionQueryBuilderTest extends TestCase
 {
     /**
-     * Тестируем ошибку в конструкторе
+     * Тестируем ошибку в параметрах
      *
      * @return void
      */
-    public function testConstructorError(): void
+    public function testParamError(): void
     {
         $this->expectExceptionMessage('$chunks должно содержать минимум одно значение');
-        new ChunksConditionQueryBuilder([]);
+        (new ChunksConditionQueryBuilder())->getConditionsQueryByChunks([], 'productId');
     }
 
     /**
-     * Тестируем получение массива условий
+     * Тестируем получение массива условий по чанкам
      *
      * @return void
      */
     public function testResult(): void
     {
+        $queryBuilder = new ChunksConditionQueryBuilder();
         self::assertEquals(
             [
                 'toUint64(productId) <= toUint64(123)',
                 'toUint64(productId) > toUint64(123)',
             ],
-            (new ChunksConditionQueryBuilder(['123']))->getConditionsQueryArray('toUint64(productId)', 'toUint64(%)')
+            $queryBuilder->getConditionsQueryByChunks(['123'], 'toUint64(productId)', 'toUint64(%)')
         );
 
         self::assertEquals(
@@ -40,7 +41,24 @@ class ChunksConditionQueryBuilderTest extends TestCase
                 'productId > 123 AND productId <= 345',
                 'productId > 345',
             ],
-            (new ChunksConditionQueryBuilder(['123', '345']))->getConditionsQueryArray('productId', '%')
+            $queryBuilder->getConditionsQueryByChunks(['123', '345'], 'productId')
+        );
+    }
+
+    /**
+     * Тестируем разбиение на основании остатка от деления
+     *
+     * @return void
+     */
+    public function testModulo(): void
+    {
+        $queryBuilder = new ChunksConditionQueryBuilder();
+        self::assertEquals(
+            [
+                'modulo(cityHash64(productId), 2) = 0',
+                'modulo(cityHash64(productId), 2) = 1',
+            ],
+            $queryBuilder->getConditionsQueryByModulo(2, 'productId')
         );
     }
 }
