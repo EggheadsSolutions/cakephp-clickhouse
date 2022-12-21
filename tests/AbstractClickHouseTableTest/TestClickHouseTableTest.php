@@ -8,7 +8,9 @@ use Cake\I18n\FrozenDate;
 use Cake\TestSuite\TestCase;
 use Eggheads\CakephpClickHouse\AbstractClickHouseTable;
 use Eggheads\CakephpClickHouse\ClickHouse;
+use Eggheads\CakephpClickHouse\ClickHouseMockCollection;
 use Eggheads\CakephpClickHouse\ClickHouseTableInterface;
+use Eggheads\CakephpClickHouse\TempTableClickHouse;
 use Eggheads\Mocks\ConstantMocker;
 use Eggheads\Mocks\MethodMocker;
 use function PHPUnit\Framework\assertEquals;
@@ -146,7 +148,62 @@ class TestClickHouseTableTest extends TestCase
      */
     public function testGetTableName(): void
     {
-        self::assertEquals('default.test', TestClickHouseTable::getInstance()->getTableName());
+        $testTable = TestClickHouseTable::getInstance();
+        self::assertEquals('default.test', $testTable->getTableName());
+
+        $tempTable = TempTableClickHouse::createFromTable('clone', TestClickHouseTable::getInstance());
+        ClickHouseMockCollection::add($testTable->getShortTableName(), $tempTable);
+        self::assertEquals($tempTable->getName(), $testTable->getTableName());
+
+        ClickHouseMockCollection::clear();
+        self::assertEquals('default.test', $testTable->getTableName());
+    }
+
+    /**
+     * @testdox Проверим создание и заполнение временной таблицы при использовании фикстур
+     *
+     * @return void
+     */
+    public function testFixtureFactory(): void
+    {
+        ClickHouseMockCollection::clear();
+        (new TestClickhouseFixtureFactory([['id' => 'id1', 'checkDate' => '2021-01-03',]], 3))->persist();
+
+        $testTable = TestClickHouseTable::getInstance();
+        self::assertNotNull(ClickHouseMockCollection::getTableName($testTable->getShortTableName()));
+
+        $statement = $testTable->select(
+            'SELECT * FROM {tableName} ORDER BY checkDate',
+            ['tableName' => $testTable->getTableName()]
+        );
+
+        self::assertEquals(
+            [
+                [
+                    'id' => 'id1',
+                    'url' => 'String',
+                    'data' => 10.2,
+                    'checkDate' => '2021-01-03',
+                    'created' => '2020-03-01 23:12:12',
+                ],
+                [
+                    'id' => 'String',
+                    'url' => 'String',
+                    'data' => 10.2,
+                    'checkDate' => '2022-01-03',
+                    'created' => '2020-03-01 23:12:12',
+                ],
+                [
+                    'id' => 'String',
+                    'url' => 'String',
+                    'data' => 10.2,
+                    'checkDate' => '2022-01-03',
+                    'created' => '2020-03-01 23:12:12',
+                ],
+            ],
+            $statement->rows()
+        );
+        ClickHouseMockCollection::clear();
     }
 
     /**

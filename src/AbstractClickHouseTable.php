@@ -287,8 +287,23 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     /** @inheritdoc */
     public function getTableName(?bool $isReaderConfig = true): string
     {
+        $mockTableName = ClickHouseMockCollection::getTableName($this->getShortTableName());
+        if ($mockTableName !== null) {
+            return $mockTableName;
+        }
+
         $clickHouse = $isReaderConfig ? $this->_getReader() : $this->_getWriter();
         return $clickHouse->getClient()->settings()->getDatabase() . '.' . $this->_getNamePart();
+    }
+
+    /**
+     * Возвращает имя таблицы без префикса БД.
+     *
+     * @return string
+     */
+    public function getShortTableName(): string
+    {
+        return $this->_tableName;
     }
 
     /** @inheritdoc */
