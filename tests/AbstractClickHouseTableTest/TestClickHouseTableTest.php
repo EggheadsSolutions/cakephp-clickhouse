@@ -39,6 +39,7 @@ class TestClickHouseTableTest extends TestCase
         );
 
         Cache::disable();
+        ClickHouseMockCollection::clear();
     }
 
     /** @inheritDoc */
@@ -48,6 +49,7 @@ class TestClickHouseTableTest extends TestCase
 
         ConstantMocker::restore();
         MethodMocker::restore($this->hasFailed());
+        ClickHouseMockCollection::clear();
     }
 
     /**
@@ -166,7 +168,6 @@ class TestClickHouseTableTest extends TestCase
      */
     public function testFixtureFactory(): void
     {
-        ClickHouseMockCollection::clear();
         (new TestClickhouseFixtureFactory([['id' => 'id1', 'checkDate' => '2021-01-03',]], 3))->persist();
 
         $testTable = TestClickHouseTable::getInstance();
@@ -203,7 +204,6 @@ class TestClickHouseTableTest extends TestCase
             ],
             $statement->rows()
         );
-        ClickHouseMockCollection::clear();
     }
 
     /**
