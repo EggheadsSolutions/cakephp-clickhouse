@@ -169,7 +169,7 @@ class TestClickHouseTableTest extends TestCase
      */
     public function testFixtureFactory(): void
     {
-        (new TestClickhouseFixtureFactory([['id' => 'id1', 'checkDate' => '2021-01-03',]], 3))->persist();
+        (new TestClickhouseFixtureFactory([['id' => 'id1', 'checkDate' => '2021-01-03',]], 2))->persist();
 
         $testTable = TestClickHouseTable::getInstance();
         $tableName = MethodMocker::callPrivate($testTable, '_getNamePart');
