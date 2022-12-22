@@ -33,7 +33,7 @@ abstract class AbstractClickHouseFixtureFactory
     }
 
     /**
-     * Данные для сохранения во временную таблицу
+     * Создание данных элемента временной таблицы
      *
      * @return array<mixed>
      */
