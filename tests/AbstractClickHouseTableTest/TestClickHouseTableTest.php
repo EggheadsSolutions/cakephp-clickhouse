@@ -154,7 +154,8 @@ class TestClickHouseTableTest extends TestCase
         self::assertEquals('default.test', $testTable->getTableName());
 
         $tempTable = TempTableClickHouse::createFromTable('clone', TestClickHouseTable::getInstance());
-        ClickHouseMockCollection::add($testTable->getShortTableName(), $tempTable);
+        $tableName = MethodMocker::callPrivate($testTable, '_getNamePart');
+        ClickHouseMockCollection::add($tableName, $tempTable);
         self::assertEquals($tempTable->getName(), $testTable->getTableName());
 
         ClickHouseMockCollection::clear();
@@ -171,7 +172,8 @@ class TestClickHouseTableTest extends TestCase
         (new TestClickhouseFixtureFactory([['id' => 'id1', 'checkDate' => '2021-01-03',]], 3))->persist();
 
         $testTable = TestClickHouseTable::getInstance();
-        self::assertNotNull(ClickHouseMockCollection::getTableName($testTable->getShortTableName()));
+        $tableName = MethodMocker::callPrivate($testTable, '_getNamePart');
+        self::assertNotNull(ClickHouseMockCollection::getTableName($tableName));
 
         $statement = $testTable->select(
             'SELECT * FROM {tableName} ORDER BY checkDate',

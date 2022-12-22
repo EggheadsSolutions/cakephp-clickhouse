@@ -43,6 +43,6 @@ class ClickHouseMockCollection
      */
     public static function getTableName(string $tableName): ?string
     {
-        return !empty(self::$_collection[$tableName]) ? self::$_collection[$tableName]->getName() : null;
+        return array_key_exists($tableName, self::$_collection) ? self::$_collection[$tableName]->getName() : null;
     }
 }

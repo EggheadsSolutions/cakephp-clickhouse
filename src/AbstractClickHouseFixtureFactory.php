@@ -11,22 +11,24 @@ abstract class AbstractClickHouseFixtureFactory
     /**
      * Массив данных для вставки во временную таблицу
      *
-     * @var array<mixed>
+     * @var array[]
      */
     protected array $_items = [];
 
     /**
-     * Добавление данных для вставки во временную таблицу
+     * Создание объекта фикстур
      *
-     * @param array<mixed> $items
-     * @param int $rowCount - Мин кол-во добавляемых в таблицу строк
+     * @param array[] $items Массив с данными для вставки в таблицу
+     * @param int $rowCount Кол-во добавляемых дополнительных строк с дефолными значениями
      */
-    public function __construct(array $items, int $rowCount = 10)
+    public function __construct(array $items, int $rowCount = 0)
     {
-        $count = max($rowCount, count($items));
-        for ($index = 0; $index < $count; $index++) {
-            $item = $items[$index] ?? [];
+        foreach ($items as $item) {
             $this->_items[] = $item + $this->_getDefaultData();
+        }
+
+        for ($index = 0; $index < $rowCount; $index++) {
+            $this->_items[] = $this->_getDefaultData();
         }
     }
 
@@ -47,7 +49,8 @@ abstract class AbstractClickHouseFixtureFactory
     public function persist(): TempTableClickHouse
     {
         $table = $this->_getTable();
-        $tempTable = new TempTableClickHouse($table->getShortTableName(), $table->getSchema());
+        $tableName = explode('.', $this->_getTable()->getTableName())[1];
+        $tempTable = new TempTableClickHouse($tableName, $table->getSchema());
         $transaction = $tempTable->createTransaction();
 
         foreach ($this->_items as $fixture) {
@@ -56,13 +59,13 @@ abstract class AbstractClickHouseFixtureFactory
 
         $transaction->commit();
 
-        ClickHouseMockCollection::add($table->getShortTableName(), $tempTable);
+        ClickHouseMockCollection::add($tableName, $tempTable);
 
         return $tempTable;
     }
 
     /**
-     * Название класса для ClickHouse таблицы
+     * Получение инстанса класса ClickHouse таблицы
      *
      * @return AbstractClickHouseTable
      */
