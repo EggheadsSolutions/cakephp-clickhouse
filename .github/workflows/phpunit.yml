@@ -20,3 +20,4 @@ jobs:
           use-repository-config: no
           app-local-php: no
           post-install-cmd: no
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
