@@ -8,11 +8,7 @@ use Eggheads\CakephpClickHouse\AbstractClickHouseTable;
 
 class TestClickhouseFixtureFactory extends AbstractClickHouseFixtureFactory
 {
-    /**
-     * @inheritDoc
-     *
-     * @return array<string, string|float>
-     */
+    /** @inheritDoc */
     protected function _makeDefaultData(): array
     {
         return [

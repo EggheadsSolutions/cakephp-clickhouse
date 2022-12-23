@@ -17,6 +17,9 @@ use function PHPUnit\Framework\assertEquals;
 
 class TestClickHouseTableTest extends TestCase
 {
+    /** Имя тестовой таблицы */
+    private const TABLE_NAME = 'test';
+
     /** @inerhitDoc */
     public function setUp(): void
     {
@@ -151,15 +154,15 @@ class TestClickHouseTableTest extends TestCase
     public function testGetTableName(): void
     {
         $testTable = TestClickHouseTable::getInstance();
-        self::assertEquals('default.test', $testTable->getTableName());
+        $testTableName = 'default.' . self::TABLE_NAME;
+        self::assertEquals($testTableName, $testTable->getTableName());
 
         $tempTable = TempTableClickHouse::createFromTable('clone', TestClickHouseTable::getInstance());
-        $tableName = MethodMocker::callPrivate($testTable, '_getNamePart');
-        ClickHouseMockCollection::add($tableName, $tempTable);
+        ClickHouseMockCollection::add(self::TABLE_NAME, $tempTable);
         self::assertEquals($tempTable->getName(), $testTable->getTableName());
 
         ClickHouseMockCollection::clear();
-        self::assertEquals('default.test', $testTable->getTableName());
+        self::assertEquals($testTableName, $testTable->getTableName());
     }
 
     /**
@@ -172,8 +175,7 @@ class TestClickHouseTableTest extends TestCase
         (new TestClickhouseFixtureFactory([['id' => 'id1', 'checkDate' => '2021-01-03',]], 2))->persist();
 
         $testTable = TestClickHouseTable::getInstance();
-        $tableName = MethodMocker::callPrivate($testTable, '_getNamePart');
-        self::assertNotNull(ClickHouseMockCollection::getTableName($tableName));
+        self::assertNotNull(ClickHouseMockCollection::getTableName(self::TABLE_NAME));
 
         $statement = $testTable->select(
             'SELECT * FROM {tableName} ORDER BY checkDate',
