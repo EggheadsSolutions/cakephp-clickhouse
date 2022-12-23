@@ -8,13 +8,18 @@ use Cake\I18n\FrozenDate;
 use Cake\TestSuite\TestCase;
 use Eggheads\CakephpClickHouse\AbstractClickHouseTable;
 use Eggheads\CakephpClickHouse\ClickHouse;
+use Eggheads\CakephpClickHouse\ClickHouseMockCollection;
 use Eggheads\CakephpClickHouse\ClickHouseTableInterface;
+use Eggheads\CakephpClickHouse\TempTableClickHouse;
 use Eggheads\Mocks\ConstantMocker;
 use Eggheads\Mocks\MethodMocker;
 use function PHPUnit\Framework\assertEquals;
 
 class TestClickHouseTableTest extends TestCase
 {
+    /** Имя тестовой таблицы */
+    private const TABLE_NAME = 'test';
+
     /** @inerhitDoc */
     public function setUp(): void
     {
@@ -37,6 +42,7 @@ class TestClickHouseTableTest extends TestCase
         );
 
         Cache::disable();
+        ClickHouseMockCollection::clear();
     }
 
     /** @inheritDoc */
@@ -46,6 +52,7 @@ class TestClickHouseTableTest extends TestCase
 
         ConstantMocker::restore();
         MethodMocker::restore($this->hasFailed());
+        ClickHouseMockCollection::clear();
     }
 
     /**
@@ -91,6 +98,13 @@ class TestClickHouseTableTest extends TestCase
 
         self::assertEquals(1, $testTable->getTotal(FrozenDate::parse('2020-08-02')));
         self::assertTrue($testTable->hasData(FrozenDate::parse('2020-08-02')));
+
+        self::assertEquals(1, $testTable->getTotalInPeriod(
+            FrozenDate::parse('2020-08-01'),
+            FrozenDate::parse('2020-08-05'),
+            'created',
+            'AND data > 3'
+        ));
 
         self::assertFalse($testTable->hasData(FrozenDate::parse('2016-08-02')));
 
@@ -146,7 +160,61 @@ class TestClickHouseTableTest extends TestCase
      */
     public function testGetTableName(): void
     {
-        self::assertEquals('default.test', TestClickHouseTable::getInstance()->getTableName());
+        $testTable = TestClickHouseTable::getInstance();
+        $testTableName = 'default.' . self::TABLE_NAME;
+        self::assertEquals($testTableName, $testTable->getTableName());
+
+        $tempTable = TempTableClickHouse::createFromTable('clone', TestClickHouseTable::getInstance());
+        ClickHouseMockCollection::add(self::TABLE_NAME, $tempTable);
+        self::assertEquals($tempTable->getName(), $testTable->getTableName());
+
+        ClickHouseMockCollection::clear();
+        self::assertEquals($testTableName, $testTable->getTableName());
+    }
+
+    /**
+     * @testdox Проверим создание и заполнение временной таблицы при использовании фикстур
+     *
+     * @return void
+     */
+    public function testFixtureFactory(): void
+    {
+        (new TestClickhouseFixtureFactory([['id' => 'id1', 'checkDate' => '2021-01-03',]], 2))->persist();
+
+        $testTable = TestClickHouseTable::getInstance();
+        self::assertNotNull(ClickHouseMockCollection::getTableName(self::TABLE_NAME));
+
+        $statement = $testTable->select(
+            'SELECT * FROM {tableName} ORDER BY checkDate',
+            ['tableName' => $testTable->getTableName()]
+        );
+
+        self::assertEquals(
+            [
+                [
+                    'id' => 'id1',
+                    'url' => 'String',
+                    'data' => 10.2,
+                    'checkDate' => '2021-01-03',
+                    'created' => '2020-03-01 23:12:12',
+                ],
+                [
+                    'id' => 'String',
+                    'url' => 'String',
+                    'data' => 10.2,
+                    'checkDate' => '2022-01-03',
+                    'created' => '2020-03-01 23:12:12',
+                ],
+                [
+                    'id' => 'String',
+                    'url' => 'String',
+                    'data' => 10.2,
+                    'checkDate' => '2022-01-03',
+                    'created' => '2020-03-01 23:12:12',
+                ],
+            ],
+            $statement->rows()
+        );
     }
 
     /**

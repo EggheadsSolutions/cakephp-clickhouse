@@ -14,3 +14,4 @@ jobs:
       - uses: EggheadsSolutions/ci-php-standart-check@v1
         with:
           php-version: ${{ matrix.php-versions }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

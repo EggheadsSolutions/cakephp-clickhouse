@@ -22,5 +22,6 @@ Configure::write(
     [
         'writer' => CLICKHOUSE_CONFIG,
         'ssdNode' => CLICKHOUSE_CONFIG,
+        'temp' => CLICKHOUSE_CONFIG,
     ]
 );

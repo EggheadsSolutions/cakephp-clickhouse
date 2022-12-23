@@ -7,7 +7,7 @@ use Cake\Cache\Cache;
 use Cake\Core\Configure;
 use Cake\I18n\FrozenTime;
 use Cake\TestSuite\TestCase;
-use ClickHouseDB\Exception\QueryException;
+use ClickHouseDB\Exception\DatabaseException;
 use Eggheads\CakephpClickHouse\ClickHouse;
 use Eggheads\CakephpClickHouse\TempTableClickHouse;
 use Eggheads\CakephpClickHouse\Tests\AbstractClickHouseTableTest\TestClickHouseTable;
@@ -57,8 +57,8 @@ class TempTableClickHouseTest extends TestCase
         $tableName = $set->getName();
 
         unset($set);
-        $this->expectExceptionCode('404');
-        $this->expectException(QueryException::class);
+        $this->expectExceptionCode('60');
+        $this->expectException(DatabaseException::class);
         ClickHouse::getInstance(self::CH_PROFILE)->select("DESCRIBE " . $tableName)->fetchOne();
     }
 
@@ -71,9 +71,7 @@ class TempTableClickHouseTest extends TestCase
         $table = TempTableClickHouse::createFromTable(
             'clone',
             TestClickHouseTable::getInstance(),
-            "SELECT '1', 'bla-bla', 3.0, '2020-08-04', '2020-08-04 09:00:00'",
-            [],
-            self::CH_PROFILE
+            "SELECT '1', 'bla-bla', 3.0, '2020-08-04', '2020-08-04 09:00:00'"
         );
 
         self::assertEquals(
@@ -84,7 +82,7 @@ class TempTableClickHouseTest extends TestCase
                  'checkDate' => '2020-08-04',
                  'created' => '2020-08-04 09:00:00',
              ]],
-            ClickHouse::getInstance(self::CH_PROFILE)->select('SELECT * FROM ' . $table->getName())->rows()
+            ClickHouse::getInstance()->select('SELECT * FROM ' . $table->getName())->rows()
         );
     }
 }

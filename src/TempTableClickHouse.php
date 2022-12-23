@@ -137,7 +137,7 @@ class TempTableClickHouse
         $fieldsArr = [];
         foreach ($typeMap as $index => $fieldType) {
             $key = is_numeric($index) ? 'field' . $index : $index;
-            $fieldsArr[] = $key . ' ' . $fieldType;
+            $fieldsArr[] = sprintf('`%s` %s', $key, $fieldType);
             $this->_fieldsSchema[$key] = $fieldType;
         }
 
