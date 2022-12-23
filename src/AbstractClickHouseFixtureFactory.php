@@ -24,11 +24,11 @@ abstract class AbstractClickHouseFixtureFactory
     public function __construct(array $items, int $rowCount = 0)
     {
         foreach ($items as $item) {
-            $this->_items[] = $item + $this->_getDefaultData();
+            $this->_items[] = $item + $this->_makeDefaultData();
         }
 
         for ($index = 0; $index < $rowCount; $index++) {
-            $this->_items[] = $this->_getDefaultData();
+            $this->_items[] = $this->_makeDefaultData();
         }
     }
 
@@ -37,7 +37,7 @@ abstract class AbstractClickHouseFixtureFactory
      *
      * @return array<mixed>
      */
-    abstract protected function _getDefaultData(): array;
+    abstract protected function _makeDefaultData(): array;
 
     /**
      * Подменяет временной таблицей с переданными фикстурами таблицу в оригинальном классе
@@ -51,13 +51,17 @@ abstract class AbstractClickHouseFixtureFactory
         $table = $this->_getTable();
         $tableName = explode('.', $this->_getTable()->getTableName())[1];
         $tempTable = new TempTableClickHouse($tableName, $table->getSchema());
-        $transaction = $tempTable->createTransaction();
 
-        foreach ($this->_items as $fixture) {
-            $transaction->append($fixture);
+        // создание пустой таблицы, для проверки наполнения, например, build cache
+        if (count($this->_items) > 0) {
+            $transaction = $tempTable->createTransaction();
+
+            foreach ($this->_items as $fixture) {
+                $transaction->append($fixture);
+            }
+
+            $transaction->commit();
         }
-
-        $transaction->commit();
 
         ClickHouseMockCollection::add($tableName, $tempTable);
 

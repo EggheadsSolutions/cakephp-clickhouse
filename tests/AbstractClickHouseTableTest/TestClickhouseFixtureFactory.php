@@ -13,7 +13,7 @@ class TestClickhouseFixtureFactory extends AbstractClickHouseFixtureFactory
      *
      * @return array<string, string|float>
      */
-    protected function _getDefaultData(): array
+    protected function _makeDefaultData(): array
     {
         return [
             'id' => 'String',
