@@ -18,6 +18,9 @@ abstract class AbstractClickHouseFixtureFactory
     /**
      * Создание объекта фикстур
      *
+     * Если передать $items=[] и $rowCount=0, то будет создана таблица без данных.
+     * Такой вариант пригодится для тестирования наполнения cache таблиц
+     *
      * @param array[] $items Массив с данными для вставки в таблицу
      * @param int $rowCount Кол-во добавляемых дополнительных строк с дефолными значениями
      */
@@ -52,7 +55,6 @@ abstract class AbstractClickHouseFixtureFactory
         $tableName = explode('.', $this->_getTable()->getTableName())[1];
         $tempTable = new TempTableClickHouse($tableName, $table->getSchema());
 
-        // создание пустой таблицы, для проверки наполнения, например, build cache
         if (count($this->_items) > 0) {
             $transaction = $tempTable->createTransaction();
 
