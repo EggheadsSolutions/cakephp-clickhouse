@@ -326,6 +326,32 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     }
 
     /**
+     * Получаем общее кол-во записей в периоде.
+     *
+     * @param ChronosInterface $workPeriodFrom
+     * @param ChronosInterface $workPeriodTo
+     * @param string $dateColumn
+     * @param string $conditionsString
+     * @return int
+     */
+    public function getTotalInPeriod(
+        ChronosInterface $workPeriodFrom,
+        ChronosInterface $workPeriodTo,
+        string           $dateColumn = 'checkDate',
+        string           $conditionsString = ''
+    ): int {
+        return (int)$this->select("
+            SELECT count(*) rowsCount FROM {thisTable} WHERE {dateColumn} BETWEEN :dateStart AND :dateEnd {conditionsString}
+        ", [
+            'thisTable' => $this->getTableName(),
+            'dateColumn' => $dateColumn,
+            'dateStart' => $workPeriodFrom->toDateString(),
+            'dateEnd' => $workPeriodTo->toDateString(),
+            'conditionsString' => $conditionsString,
+        ])->fetchOne('rowsCount');
+    }
+
+    /**
      * Подчищаем инстанс, если объект уничтожили
      */
     public function __destruct()

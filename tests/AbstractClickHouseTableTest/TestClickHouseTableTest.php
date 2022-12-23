@@ -99,6 +99,13 @@ class TestClickHouseTableTest extends TestCase
         self::assertEquals(1, $testTable->getTotal(FrozenDate::parse('2020-08-02')));
         self::assertTrue($testTable->hasData(FrozenDate::parse('2020-08-02')));
 
+        self::assertEquals(1, $testTable->getTotalInPeriod(
+            FrozenDate::parse('2020-08-01'),
+            FrozenDate::parse('2020-08-05'),
+            'created',
+            'AND data > 3'
+        ));
+
         self::assertFalse($testTable->hasData(FrozenDate::parse('2016-08-02')));
 
         assertEquals('2020-08-04', $testTable->getMaxDate('created')->toDateString());
