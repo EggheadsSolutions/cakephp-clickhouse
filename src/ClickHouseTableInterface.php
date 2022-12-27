@@ -105,9 +105,10 @@ interface ClickHouseTableInterface
      *
      * @param ChronosInterface $workDate
      * @param string $dateColumn Поле с датой
+     * @param string $conditionsString
      * @return bool
      */
-    public function hasData(ChronosInterface $workDate, string $dateColumn = 'checkDate'): bool;
+    public function hasData(ChronosInterface $workDate, string $dateColumn = 'checkDate', string $conditionsString = ''): bool;
 
     /**
      * Получаем общее кол-во записей на определённую дату

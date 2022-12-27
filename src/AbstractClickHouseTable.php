@@ -225,9 +225,9 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     }
 
     /** @inheritdoc */
-    public function hasData(ChronosInterface $workDate, string $dateColumn = 'checkDate'): bool
+    public function hasData(ChronosInterface $workDate, string $dateColumn = 'checkDate', string $conditionsString = ''): bool
     {
-        return (bool)$this->getTotal($workDate, $dateColumn);
+        return (bool)$this->getTotal($workDate, $dateColumn, $conditionsString);
     }
 
     /** @inheritdoc */
