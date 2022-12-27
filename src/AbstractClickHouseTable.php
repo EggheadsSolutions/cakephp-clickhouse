@@ -231,16 +231,35 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     }
 
     /** @inheritdoc */
-    public function getTotal(ChronosInterface $workDate, string $dateColumn = 'checkDate'): int
+    public function getTotal(ChronosInterface $workDate, string $dateColumn = 'checkDate', string $conditionsString = ''): int
     {
         return (int)$this->select(
-            'SELECT count() cnt FROM {me} WHERE {dateColumn}=:workDateString',
+            'SELECT count() cnt FROM {me} WHERE {dateColumn}=:workDateString {conditionsString}',
             [
                 'dateColumn' => $dateColumn,
-                'me' => $this->_getNamePart(),
+                'me' => $this->getTableName(),
                 'workDateString' => $workDate->toDateString(),
+                'conditionsString' => $conditionsString,
             ]
         )->fetchOne('cnt');
+    }
+
+    /** @inheritdoc */
+    public function getTotalInPeriod(
+        ChronosInterface $workPeriodFrom,
+        ChronosInterface $workPeriodTo,
+        string           $dateColumn = 'checkDate',
+        string           $conditionsString = ''
+    ): int {
+        return (int)$this->select("
+            SELECT count(*) rowsCount FROM {thisTable} WHERE {dateColumn} BETWEEN :dateStart AND :dateEnd {conditionsString}
+        ", [
+            'thisTable' => $this->getTableName(),
+            'dateColumn' => $dateColumn,
+            'dateStart' => $workPeriodFrom->toDateString(),
+            'dateEnd' => $workPeriodTo->toDateString(),
+            'conditionsString' => $conditionsString,
+        ])->fetchOne('rowsCount');
     }
 
     /** @inheritdoc */
@@ -323,32 +342,6 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
                 ])->fetchOne('quantile');
         }
         return $result;
-    }
-
-    /**
-     * Получаем общее кол-во записей в периоде.
-     *
-     * @param ChronosInterface $workPeriodFrom
-     * @param ChronosInterface $workPeriodTo
-     * @param string $dateColumn
-     * @param string $conditionsString
-     * @return int
-     */
-    public function getTotalInPeriod(
-        ChronosInterface $workPeriodFrom,
-        ChronosInterface $workPeriodTo,
-        string           $dateColumn = 'checkDate',
-        string           $conditionsString = ''
-    ): int {
-        return (int)$this->select("
-            SELECT count(*) rowsCount FROM {thisTable} WHERE {dateColumn} BETWEEN :dateStart AND :dateEnd {conditionsString}
-        ", [
-            'thisTable' => $this->getTableName(),
-            'dateColumn' => $dateColumn,
-            'dateStart' => $workPeriodFrom->toDateString(),
-            'dateEnd' => $workPeriodTo->toDateString(),
-            'conditionsString' => $conditionsString,
-        ])->fetchOne('rowsCount');
     }
 
     /**
