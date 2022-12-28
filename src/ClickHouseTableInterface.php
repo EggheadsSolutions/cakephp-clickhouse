@@ -105,18 +105,31 @@ interface ClickHouseTableInterface
      *
      * @param ChronosInterface $workDate
      * @param string $dateColumn Поле с датой
+     * @param string $conditionsString
      * @return bool
      */
-    public function hasData(ChronosInterface $workDate, string $dateColumn = 'checkDate'): bool;
+    public function hasData(ChronosInterface $workDate, string $dateColumn = 'checkDate', string $conditionsString = ''): bool;
 
     /**
      * Получаем общее кол-во записей на определённую дату
      *
      * @param ChronosInterface $workDate
      * @param string $dateColumn
+     * @param string $conditionsString
      * @return int
      */
-    public function getTotal(ChronosInterface $workDate, string $dateColumn = 'checkDate'): int;
+    public function getTotal(ChronosInterface $workDate, string $dateColumn = 'checkDate', string $conditionsString = ''): int;
+
+    /**
+     * Получаем общее кол-во записей в периоде.
+     *
+     * @param ChronosInterface $workPeriodFrom
+     * @param ChronosInterface $workPeriodTo
+     * @param string $dateColumn
+     * @param string $conditionsString
+     * @return int
+     */
+    public function getTotalInPeriod(ChronosInterface $workPeriodFrom, ChronosInterface $workPeriodTo, string $dateColumn = 'checkDate', string $conditionsString = ''): int;
 
     /**
      * Проверяем, есть ли у таблицы мутации на текущий момент
