@@ -10,6 +10,7 @@ use Eggheads\CakephpClickHouse\AbstractClickHouseTable;
 use Eggheads\CakephpClickHouse\ClickHouse;
 use Eggheads\CakephpClickHouse\StatementHelper;
 use Eggheads\Mocks\PropertyAccess;
+use ReflectionException;
 
 class DictionaryClickHouseTableTest extends TestCase
 {
@@ -20,6 +21,12 @@ class DictionaryClickHouseTableTest extends TestCase
         Cache::disable();
     }
 
+    /**
+     * Тестируем подмену словаря
+     *
+     * @return void
+     * @throws ReflectionException
+     */
     public function test(): void
     {
         // Создадим тестовый словарь
