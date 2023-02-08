@@ -21,6 +21,7 @@ class StatementHelper
         }
 
         $optionsString = $inputMatches['optionsString'];
+        $lenOptionString = strlen($optionsString);
 
         $result = [];
         $offset = 0;
@@ -31,7 +32,7 @@ class StatementHelper
 
             $result[mb_strtolower($optionMatches['key'])] = trim($optionMatches['value'], '\'');
             $offset += strlen($optionMatches[0]);
-        } while ($offset < strlen($optionsString));
+        } while ($offset < $lenOptionString);
 
         return $result;
     }

@@ -17,5 +17,5 @@ services:
             - .:/var/www/
     clickhouse:
         image: yandex/clickhouse-server
-#        ports:
-#            - "8823:8123"
+        ports:
+            - "8823:8123"

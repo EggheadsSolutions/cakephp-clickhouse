@@ -13,6 +13,7 @@ use Eggheads\Mocks\PropertyAccess;
 
 class DictionaryClickHouseTableTest extends TestCase
 {
+    /** @inheritdoc */
     public function setUp(): void
     {
         parent::setUp();
