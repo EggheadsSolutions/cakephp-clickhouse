@@ -11,7 +11,7 @@ abstract class AbstractClickHouseFixtureFactory
     /**
      * Массив данных для вставки во временную таблицу
      *
-     * @var array[]
+     * @var array<mixed>
      */
     protected array $_items = [];
 
@@ -21,7 +21,7 @@ abstract class AbstractClickHouseFixtureFactory
      * Если передать $items=[] и $rowCount=0, то будет создана таблица без данных.
      * Такой вариант пригодится для тестирования наполнения cache таблиц
      *
-     * @param array[] $items Массив с данными для вставки в таблицу
+     * @param array<mixed> $items Массив с данными для вставки в таблицу
      * @param int $rowCount Кол-во добавляемых дополнительных строк с дефолными значениями
      */
     public function __construct(array $items, int $rowCount = 0)
