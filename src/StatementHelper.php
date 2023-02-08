@@ -12,7 +12,7 @@ class StatementHelper
      * Выделение из строки создания таблицы массива параметров подключения
      *
      * @param string $statement
-     * @return array
+     * @return array<string,string> [Параметр => Значение параметра]
      */
     public static function extractCredentialsFromCreteTableStatement(string $statement): array
     {
@@ -41,7 +41,7 @@ class StatementHelper
      * Замена параметров подключения
      *
      * @param string $statement
-     * @param array $replace
+     * @param array<string,string> $replace
      * @return string
      */
     public static function replaceCredentialsInCreateTableStatement(string $statement, array $replace): string
