@@ -28,8 +28,14 @@ abstract class AbstractDictionaryClickHouseTable extends AbstractClickHouseTable
                 throw new LogicException('Мок мока');
             }
 
-            /** @var string $database Имя БД */
-            $database = $this->_getWriter()->getClient()->settings()->getDatabase();
+            $readerClient =  $this->_getReader()->getClient();
+
+            /** @var string|null $database Имя БД */
+            $database = $readerClient->settings()->getDatabase();
+
+            if (is_null($database)) {
+                new LogicException('Невозможно получить имя базы данных');
+            }
 
             $mySQLConfig = new MySqlCredentialsItem(ConnectionManager::getConfig('default'));
 
@@ -42,8 +48,8 @@ abstract class AbstractDictionaryClickHouseTable extends AbstractClickHouseTable
             $currentMockCreateStatement = $isExistMockDictTable ? $this->_getCreateTableStatement($database . self::TABLE_NAME_DELIMITER . $mockDictName) : '';
 
             if ($mockCreateStatement !== $currentMockCreateStatement) {
-                $this->_getWriter()->getClient()->write('DROP DICTIONARY IF EXISTS {table}', ['table' => $mockDictName]);
-                $this->_getWriter()->getClient()->write($mockCreateStatement);
+                $readerClient->write('DROP DICTIONARY IF EXISTS {table}', ['table' => $mockDictName]);
+                $readerClient->write($mockCreateStatement);
             }
             return $mockDictName;
         }
@@ -57,7 +63,7 @@ abstract class AbstractDictionaryClickHouseTable extends AbstractClickHouseTable
      */
     public function reload(): void
     {
-        $this->_getWriter()->getClient()->write(
+        $this->_getReader()->getClient()->write(
             'SYSTEM RELOAD DICTIONARY {table}',
             [
                 'table' => $this->getTableName(),
