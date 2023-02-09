@@ -85,7 +85,7 @@ final class ClickHouse
                 $connectParams = $writers[$profile];
             }
 
-            $connectSettings = ($connectParams['settings'] ?? []) + Configure::read('clickHouseSettings', []) + self::DEFAULT_SETTINGS; // @phpstan-ignore-line
+            $connectSettings = ($connectParams['settings'] ?? []) + Configure::read('clickHouseSettings', []) + self::DEFAULT_SETTINGS;
 
             $clickHouse = new Client($connectParams);
             $clickHouse->database($connectParams['database']);
