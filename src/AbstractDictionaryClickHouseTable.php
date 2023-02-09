@@ -33,8 +33,8 @@ abstract class AbstractDictionaryClickHouseTable extends AbstractClickHouseTable
             /** @var string|null $database Имя БД */
             $database = $readerClient->settings()->getDatabase();
 
-            if (is_null($database)) {
-                new LogicException('Невозможно получить имя базы данных');
+            if (empty($database)) {
+                throw new LogicException('Невозможно получить имя базы данных');
             }
 
             $mySQLConfig = new MySqlCredentialsItem(ConnectionManager::getConfig('default'));
