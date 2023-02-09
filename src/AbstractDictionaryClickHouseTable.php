@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Eggheads\CakephpClickHouse;
 
 use Cake\Core\Configure;
+use Cake\Datasource\ConnectionManager;
 use Cake\Utility\Inflector;
 use Eggheads\CakephpClickHouse\Entity\MySqlCredentialsItem;
 use LogicException;
@@ -30,7 +31,7 @@ abstract class AbstractDictionaryClickHouseTable extends AbstractClickHouseTable
             /** @var string $database Имя БД */
             $database = $this->_getWriter()->getClient()->settings()->getDatabase();
 
-            $mySQLConfig = new MySqlCredentialsItem(Configure::read('Datasources.default'));
+            $mySQLConfig = new MySqlCredentialsItem(ConnectionManager::getConfig('default'));
 
             $mockDictName = Inflector::underscore($mySQLConfig->database . '_') . $dictName; // Имя для словаря-мока
 

@@ -5,6 +5,7 @@ namespace Eggheads\CakephpClickHouse\Tests\AbstractDictionaryClickHouseTableTest
 
 use Cake\Cache\Cache;
 use Cake\Core\Configure;
+use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\TestCase;
 use Eggheads\CakephpClickHouse\AbstractClickHouseTable;
 use Eggheads\CakephpClickHouse\ClickHouse;
@@ -52,12 +53,14 @@ class DictionaryClickHouseTableTest extends TestCase
 
         // При включенном моке
         Configure::write('mockClickHouseDictionary', true);
-        Configure::write('Datasources.default', [
+
+        ConnectionManager::setConfig('default', [
             'database' => 'mock_db',
             'username' => 'mock_user',
             'password' => 'mock_password',
             'host' => 'mock_host',
         ]);
+
         $mockTable = TestDictClickHouseTable::getInstance();
         self::assertEquals('default.mock_db_testDict', $mockTable->getTableName()); // Имя таблицы подменилось
         $createStatement = $mockTable->select('SHOW CREATE TABLE {table}', ['table' => $mockTable->getTableName()])
