@@ -23,7 +23,7 @@ abstract class AbstractDictionaryClickHouseTable extends AbstractClickHouseTable
     protected function _buildTableName(): string
     {
         $dictName = parent::_buildTableName();
-        if (Configure::read('mockClickHouseDictionary') && !Configure::read('isUnitTest')) {
+        if (Configure::read('mockClickHouseDictionary') && !(defined('TEST_MODE') && TEST_MODE)) {
             if (ClickHouseMockCollection::getTableName($dictName)) {
                 throw new LogicException('Мок мока');
             }
