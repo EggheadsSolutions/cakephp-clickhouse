@@ -94,8 +94,8 @@ abstract class AbstractDictionaryClickHouseTable extends AbstractClickHouseTable
      * Получить выражение для создания мок-таблицы
      *
      * @param string $statement
-     * @param MySqlCredentialsItem $credentialsItem
      * @param string $mockDictName
+     * @param MySqlCredentialsItem $credentialsItem
      * @return string
      */
     private function _getCreateMockTableStatement(string $statement, string $mockDictName, MySqlCredentialsItem $credentialsItem): string
