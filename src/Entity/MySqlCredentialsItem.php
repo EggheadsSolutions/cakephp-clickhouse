@@ -29,12 +29,12 @@ class MySqlCredentialsItem
      */
     public function __construct(?array $config)
     {
-        if (empty($config) || empty($config['database']) || empty($config['host']) || empty($config['username']) || empty($config['password']) || empty($config['port'])) {
+        if (empty($config) || empty($config['database']) || empty($config['host']) || empty($config['username']) || empty($config['password'])) {
             throw new InvalidArgumentException('Не задана default конфигурация MySQL');
         }
         $this->database = $config['database'];
         $this->host = $config['host'];
-        $this->port = (int)$config['port'];
+        $this->port = (int)($config['port'] ?? 3306);
         $this->username = $config['username'];
         $this->password = $config['password'];
     }
