@@ -13,6 +13,9 @@ class MySqlCredentialsItem
     /** @var string Хост */
     public string $host;
 
+    /** @var int Порт */
+    public int $port;
+
     /** @var string Имя пользователя */
     public string $username;
 
@@ -31,6 +34,7 @@ class MySqlCredentialsItem
         }
         $this->database = $config['database'];
         $this->host = $config['host'];
+        $this->port = (int)($config['port'] ?? 3306);
         $this->username = $config['username'];
         $this->password = $config['password'];
     }

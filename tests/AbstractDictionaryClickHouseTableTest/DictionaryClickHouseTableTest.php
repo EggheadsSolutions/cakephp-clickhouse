@@ -9,7 +9,6 @@ use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\TestCase;
 use Eggheads\CakephpClickHouse\AbstractClickHouseTable;
 use Eggheads\CakephpClickHouse\ClickHouse;
-use Eggheads\CakephpClickHouse\StatementHelper;
 use Eggheads\Mocks\PropertyAccess;
 use ReflectionException;
 
@@ -56,6 +55,7 @@ class DictionaryClickHouseTableTest extends TestCase
 
         ConnectionManager::setConfig('default', [
             'database' => 'mock_db',
+            'port' => '3306',
             'username' => 'mock_user',
             'password' => 'mock_password',
             'host' => 'mock_host',
@@ -65,17 +65,10 @@ class DictionaryClickHouseTableTest extends TestCase
         self::assertEquals('default.mock_db_testDict', $mockTable->getTableName()); // Имя таблицы подменилось
         $createStatement = $mockTable->select('SHOW CREATE TABLE {table}', ['table' => $mockTable->getTableName()])
             ->fetchOne('statement');
-        $credentials = StatementHelper::extractCredentialsFromCreteTableStatement($createStatement);
-        self::assertEquals([
-            'host' => 'mock_host',
-            'port' => '3306',
-            'user' => 'mock_user',
-            'password' => 'mock_password',
-            'table' => 'test_table',
-            'db' => 'mock_db',
-            'update_field' => 'updated',
-            'invalidate_query' => 'SELECT max(updated) FROM test_table',
-        ], $credentials); // Сверяем, что параметры подключения к БД взялись из MySQL конфига
+
+        self::assertStringContainsString('CREATE DICTIONARY default.mock_db_testDict', $createStatement);
+        self::assertStringContainsString("SOURCE(MYSQL(HOST 'mock_host' PORT 3306 USER 'mock_user' PASSWORD 'mock_password' TABLE 'test_table' DB 'mock_db' UPDATE_FIELD updated INVALIDATE_QUERY 'SELECT max(updated) FROM test_table'))", $createStatement);
+
         $schema = $mockTable->getSchema();
         self::assertEquals(['id' => 'UInt64'], $schema); // Проверили, что скопировал схему
 

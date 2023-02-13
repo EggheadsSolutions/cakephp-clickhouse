@@ -11,14 +11,6 @@ use LogicException;
 
 abstract class AbstractDictionaryClickHouseTable extends AbstractClickHouseTable
 {
-    /** @var string[] Заменяемые параметры подключения в строке создания словаря */
-    public const REPLACING_CREDENTIALS = [
-        'host',
-        'user',
-        'password',
-        'db',
-    ];
-
     /** @inheritdoc */
     protected function _buildTableName(): string
     {
@@ -28,7 +20,7 @@ abstract class AbstractDictionaryClickHouseTable extends AbstractClickHouseTable
                 throw new LogicException('Мок мока');
             }
 
-            $readerClient =  $this->_getReader()->getClient();
+            $readerClient = $this->_getReader()->getClient();
 
             /** @var string|null $database Имя БД */
             $database = $readerClient->settings()->getDatabase();
@@ -40,15 +32,16 @@ abstract class AbstractDictionaryClickHouseTable extends AbstractClickHouseTable
             $mySQLConfig = new MySqlCredentialsItem(ConnectionManager::getConfig('default'));
 
             $mockDictName = Inflector::underscore($mySQLConfig->database . '_') . $dictName; // Имя для словаря-мока
+            $mockDictFullName = $database . self::TABLE_NAME_DELIMITER . $mockDictName;
 
             $originalCreateStatement = $this->_getCreateTableStatement($database . self::TABLE_NAME_DELIMITER . $dictName);
-            $mockCreateStatement = $this->_getCreateMockTableStatement($originalCreateStatement, $mySQLConfig, $dictName, $mockDictName);
+            $mockCreateStatement = $this->_getCreateMockTableStatement($originalCreateStatement, $mockDictFullName, $mySQLConfig);
 
-            $isExistMockDictTable = $this->_isTableExist($database . self::TABLE_NAME_DELIMITER . $mockDictName);
-            $currentMockCreateStatement = $isExistMockDictTable ? $this->_getCreateTableStatement($database . self::TABLE_NAME_DELIMITER . $mockDictName) : '';
+            $isExistMockDictTable = $this->_isTableExist($mockDictFullName);
+            $currentMockCreateStatement = $isExistMockDictTable ? $this->_getCreateTableStatement($mockDictFullName) : '';
 
             if ($mockCreateStatement !== $currentMockCreateStatement) {
-                $readerClient->write('DROP DICTIONARY IF EXISTS {table}', ['table' => $mockDictName]);
+                $readerClient->write('DROP DICTIONARY IF EXISTS {table}', ['table' => $mockDictFullName]);
                 $readerClient->write($mockCreateStatement);
             }
             return $mockDictName;
@@ -101,27 +94,25 @@ abstract class AbstractDictionaryClickHouseTable extends AbstractClickHouseTable
      * Получить выражение для создания мок-таблицы
      *
      * @param string $statement
-     * @param MySqlCredentialsItem $credentialsItem
-     * @param string $dictName
      * @param string $mockDictName
+     * @param MySqlCredentialsItem $credentialsItem
      * @return string
      */
-    private function _getCreateMockTableStatement(string $statement, MySqlCredentialsItem $credentialsItem, string $dictName, string $mockDictName): string
+    private function _getCreateMockTableStatement(string $statement, string $mockDictName, MySqlCredentialsItem $credentialsItem): string
     {
-        $credentials = StatementHelper::extractCredentialsFromCreteTableStatement($statement);
+        $patternReplacement = [
+            '/HOST \'[^\']+\'/iu' => sprintf("HOST '%s'", $credentialsItem->host),
+            '/PORT \d+/iu' => sprintf("PORT %s", $credentialsItem->port),
+            '/USER \'[^\']+\'/iu' => sprintf("USER '%s'", $credentialsItem->username),
+            '/PASSWORD \'[^\']+\'/iu' => sprintf("PASSWORD '%s'", $credentialsItem->password),
+            '/DB \'[^\']+\'/iu' => sprintf("DB '%s'", $credentialsItem->database),
+            '/CREATE DICTIONARY [\w_.]+/iu' => sprintf("CREATE DICTIONARY %s", $mockDictName),
+        ];
 
-        $notFoundParams = array_diff(AbstractDictionaryClickHouseTable::REPLACING_CREDENTIALS, array_keys($credentials));
-        if (count($notFoundParams) > 0) {
-            throw new LogicException('Не все необходимые поля для замены найдены в строке подключения');
+        $result = preg_replace(array_keys($patternReplacement), array_values($patternReplacement), $statement, 1, $count);
+        if ($count !== count($patternReplacement)) {
+            throw new LogicException('Ошибки при замене');
         }
-
-        $statement = str_replace($dictName, $mockDictName, $statement);
-
-        return StatementHelper::replaceCredentialsInCreateTableStatement($statement, [
-            $credentials['db'] => $credentialsItem->database,
-            $credentials['host'] => $credentialsItem->host,
-            $credentials['user'] => $credentialsItem->username,
-            $credentials['password'] => $credentialsItem->password,
-        ]);
+        return $result;
     }
 }
