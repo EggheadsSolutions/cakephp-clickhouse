@@ -67,7 +67,7 @@ class MySqlClickHouseTableTest extends TestCase
             ->fetchOne('statement');
 
         self::assertStringContainsString('CREATE TABLE default.mock_db_testMySqlEngine', $createStatement);
-        self::assertStringContainsString("MySQL('mock_host:3306', 'mock_db', '', 'mock_user', 'mock_password')", $createStatement);
+        self::assertStringContainsString("MySQL('mock_host:3306', 'mock_db', 'test_table_name', 'mock_user', 'mock_password')", $createStatement);
 
         $schema = $mockTable->getSchema();
         self::assertEquals(['id' => 'UInt32'], $schema); // Проверили, что скопировал схему

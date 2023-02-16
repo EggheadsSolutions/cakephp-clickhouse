@@ -11,9 +11,20 @@ class AbstractMySqlEngineClickHouseTable extends AbstractExternalSourceClickHous
     /** @inheritdoc */
     protected function _getCreateMockTableStatement(string $statement, string $mockTableName, MySqlCredentialsItem $credentialsItem): string
     {
-        $originalMySqlTableName = '';
+        $connectionRegExp = '/MySQL\([^\)]+\)/iu';
+
+        if (preg_match($connectionRegExp, $statement, $matches) === 1) {
+            $originalCredentials = explode(', ', $matches[0]);
+            if (!key_exists(2, $originalCredentials)) {
+                throw new LogicException('Источником CH таблицы не является MySQL');
+            }
+            $originalMySqlTableName = trim($originalCredentials[2], "'");
+        } else {
+            throw new LogicException('Источником CH таблицы не является MySQL');
+        }
+
         $patternReplacement = [
-            '/MySQL\([^\)]+\)/iu' => sprintf(
+            $connectionRegExp => sprintf(
                 "MySQL('%s:%s', '%s', '%s', '%s', '%s')",
                 $credentialsItem->host,
                 $credentialsItem->port,
