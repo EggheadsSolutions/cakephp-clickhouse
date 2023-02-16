@@ -5,6 +5,7 @@ namespace Eggheads\CakephpClickHouse\Tests\AbstractMySqlEngineClickHouseTableTes
 
 use Cake\Cache\Cache;
 use Cake\Core\Configure;
+use Cake\Core\StaticConfigTrait;
 use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\TestCase;
 use Eggheads\CakephpClickHouse\AbstractClickHouseTable;
@@ -53,6 +54,7 @@ class MySqlClickHouseTableTest extends TestCase
         // При включенном моке
         Configure::write('mockClickHouseDictionary', true);
 
+        PropertyAccess::setStatic(StaticConfigTrait::class, '_config', []);
         ConnectionManager::setConfig('default', [
             'database' => 'mock_db',
             'port' => '3306',
