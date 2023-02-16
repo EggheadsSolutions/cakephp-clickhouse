@@ -41,7 +41,7 @@ abstract class AbstractExternalSourceClickHouseTable extends AbstractClickHouseT
             $currentMockCreateStatement = $isExistMockDictTable ? $this->_getReader()->getCreateTableStatement($mockTableFullName) : '';
 
             if ($mockCreateStatement !== $currentMockCreateStatement) {
-                $readerClient->write('DROP DICTIONARY IF EXISTS {table}', ['table' => $mockTableFullName]);
+                $this->_dropTableIfExist($mockTableName);
                 $readerClient->write($mockCreateStatement);
             }
             return $mockTableName;
@@ -53,9 +53,21 @@ abstract class AbstractExternalSourceClickHouseTable extends AbstractClickHouseT
      * Получить выражение для создания мок-таблицы
      *
      * @param string $statement
-     * @param string $mockDictName
+     * @param string $mockTableName
      * @param MySqlCredentialsItem $credentialsItem
      * @return string
      */
-    abstract protected function _getCreateMockTableStatement(string $statement, string $mockDictName, MySqlCredentialsItem $credentialsItem): string;
+    abstract protected function _getCreateMockTableStatement(string $statement, string $mockTableName, MySqlCredentialsItem $credentialsItem): string;
+
+    /**
+     * Удаляет словарь или таблицу, если она существует
+     *
+     * @param string $tableName
+     * @return void
+     */
+    private function _dropTableIfExist(string $tableName)
+    {
+        $entity = is_subclass_of($this, AbstractDictionaryClickHouseTable::class) ? 'DICTIONARY' : 'TABLE';
+        $this->_getReader()->getClient()->write("DROP $entity IF EXISTS {table}", ['table' => $tableName]);
+    }
 }

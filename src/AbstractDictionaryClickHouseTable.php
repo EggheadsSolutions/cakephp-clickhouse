@@ -24,7 +24,7 @@ abstract class AbstractDictionaryClickHouseTable extends AbstractExternalSourceC
     }
 
     /** @inheritdoc */
-    protected function _getCreateMockTableStatement(string $statement, string $mockDictName, MySqlCredentialsItem $credentialsItem): string
+    protected function _getCreateMockTableStatement(string $statement, string $mockTableName, MySqlCredentialsItem $credentialsItem): string
     {
         $patternReplacement = [
             '/HOST \'[^\']+\'/iu' => sprintf("HOST '%s'", $credentialsItem->host),
@@ -32,7 +32,7 @@ abstract class AbstractDictionaryClickHouseTable extends AbstractExternalSourceC
             '/USER \'[^\']+\'/iu' => sprintf("USER '%s'", $credentialsItem->username),
             '/PASSWORD \'[^\']+\'/iu' => sprintf("PASSWORD '%s'", $credentialsItem->password),
             '/DB \'[^\']+\'/iu' => sprintf("DB '%s'", $credentialsItem->database),
-            '/CREATE DICTIONARY [\w_.]+/iu' => sprintf("CREATE DICTIONARY %s", $mockDictName),
+            '/CREATE DICTIONARY [\w_.]+/iu' => sprintf("CREATE DICTIONARY %s", $mockTableName),
         ];
 
         $result = preg_replace(array_keys($patternReplacement), array_values($patternReplacement), $statement, 1, $count);
