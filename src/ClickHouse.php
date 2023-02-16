@@ -125,6 +125,33 @@ final class ClickHouse
     }
 
     /**
+     * Проверить существование таблицы
+     *
+     * @param string $tableName
+     * @return bool
+     */
+    public function isTableExist(string $tableName): bool
+    {
+        return (bool)$this->select('EXISTS TABLE {dict}', [
+            'dict' => $tableName,
+        ])->fetchOne('result');
+    }
+
+    /**
+     * Получить выражение для создания таблицы
+     *
+     * @param string $tableName
+     * @return string
+     */
+    public function getCreateTableStatement(string $tableName): string
+    {
+        return $this->select('SHOW CREATE TABLE {dict}', [
+            'dict' => $tableName,
+        ])->fetchOne('statement');
+    }
+
+
+    /**
      * Включён ли режим отладки
      *
      * @return bool
