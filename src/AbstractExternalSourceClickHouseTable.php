@@ -67,7 +67,7 @@ abstract class AbstractExternalSourceClickHouseTable extends AbstractClickHouseT
      */
     private function _dropTableIfExist(string $tableName)
     {
-        $entity = is_subclass_of($this, AbstractDictionaryClickHouseTable::class) ? 'DICTIONARY' : 'TABLE';
+        $entity = $this instanceof AbstractDictionaryClickHouseTable ? 'DICTIONARY' : 'TABLE';
         $this->_getReader()->getClient()->write("DROP $entity IF EXISTS {table}", ['table' => $tableName]);
     }
 }
