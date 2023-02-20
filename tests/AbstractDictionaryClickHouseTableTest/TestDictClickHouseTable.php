@@ -7,6 +7,4 @@ use Eggheads\CakephpClickHouse\AbstractDictionaryClickHouseTable;
 
 class TestDictClickHouseTable extends AbstractDictionaryClickHouseTable
 {
-    /** @inerhitDoc */
-    public const WRITER_CONFIG = 'ssdNode';
 }

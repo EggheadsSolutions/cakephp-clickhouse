@@ -53,6 +53,7 @@ class DictionaryClickHouseTableTest extends TestCase
         // При включенном моке
         Configure::write('mockClickHouseDictionary', true);
 
+        PropertyAccess::setStatic(ConnectionManager::class, '_config', []);
         ConnectionManager::setConfig('default', [
             'database' => 'mock_db',
             'port' => '3306',
