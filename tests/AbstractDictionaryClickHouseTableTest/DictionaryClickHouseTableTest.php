@@ -5,6 +5,7 @@ namespace Eggheads\CakephpClickHouse\Tests\AbstractDictionaryClickHouseTableTest
 
 use Cake\Core\Configure;
 use Eggheads\CakephpClickHouse\ClickHouse;
+use Eggheads\CakephpClickHouse\ClickHouseTableManager;
 use Eggheads\CakephpClickHouse\Tests\TestCase;
 
 class DictionaryClickHouseTableTest extends TestCase
@@ -38,14 +39,14 @@ class DictionaryClickHouseTableTest extends TestCase
         );
 
         // При выключенном моке
-        Configure::write('mockClickHouseDictionary', false);
+        Configure::write(ClickHouseTableManager::USE_DOUBLERS_CONFIG_KEY, false);
         self::assertEquals($testDictName, TestDictClickHouseTable::getInstance()->getTableName());
 
         // Чистим инстансы и кэш
         $this->_clearClickHouseTablesInfo();
 
         // При включенном моке
-        Configure::write('mockClickHouseDictionary', true);
+        Configure::write(ClickHouseTableManager::USE_DOUBLERS_CONFIG_KEY, true);
 
         $mockTable = TestDictClickHouseTable::getInstance();
         self::assertEquals('default.fake_db_testDict', $mockTable->getTableName()); // Имя таблицы подменилось

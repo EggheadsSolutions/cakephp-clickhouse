@@ -3,14 +3,11 @@ declare(strict_types=1);
 
 namespace Eggheads\CakephpClickHouse;
 
-use Cake\Cache\Cache;
 use Cake\Chronos\ChronosInterface;
 use Cake\I18n\FrozenDate;
 use ClickHouseDB\Statement;
 use LogicException;
 use OutOfBoundsException;
-use ReflectionClass;
-use RuntimeException;
 
 abstract class AbstractClickHouseTable implements ClickHouseTableInterface
 {
@@ -40,10 +37,10 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     /**
      * Регулярка для поиска имени таблицы из названия класса согласно конвенции
      */
-    private const NAME_CONVENTION = '/^(.+)ClickHouseTable$/';
+    public const NAME_CONVENTION = '/(?<name>[^\\\\]+)ClickHouseTable$/';
 
     /** @var string Разделитель имени таблицы и базы данных */
-    protected const TABLE_NAME_DELIMITER = '.';
+    public const TABLE_NAME_DELIMITER = '.';
 
     /**
      * Объект-одиночка
@@ -53,27 +50,10 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     private static array $_instances = [];
 
     /**
-     * Схема таблицы ['имя поля' => 'тип']
-     *
-     * @var null|array<string, string>
-     */
-    private ?array $_schema = null;
-
-    /**
-     * Имя таблицы
-     *
-     * @var string
-     */
-    private string $_tableName;
-
-    /**
      * AbstractClickHouseTable constructor.
-     *
-     * @throws LogicException
      */
     protected function __construct()
     {
-        $this->_tableName = $this->_buildTableName();
     }
 
     /**
@@ -92,25 +72,6 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     }
 
     /**
-     * Формируем имя таблицы на основании имени класса
-     *
-     * @return string
-     */
-    protected function _buildTableName(): string
-    {
-        if (!empty(static::TABLE)) {
-            return static::TABLE;
-        } else {
-            $reflect = new ReflectionClass($this);
-            if (!preg_match(self::NAME_CONVENTION, $reflect->getShortName(), $matches)) {
-                throw new LogicException('Не задана константа TABLE для класса ' . static::class . ' , и класс не соответствует конвенции ' . self::NAME_CONVENTION);
-            }
-
-            return lcfirst($matches[1]);
-        }
-    }
-
-    /**
      * Возвращает имя таблицы без префикса БД.
      *
      * @return string
@@ -118,7 +79,7 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
      */
     protected function _getNamePart(): string
     {
-        return $this->_tableName;
+        return $this->_getDescriptor()->getName();
     }
 
     /** @inheritdoc */
@@ -138,16 +99,7 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     /** @inheritdoc */
     public function getSchema(): array
     {
-        if (empty($this->_schema)) {
-            $this->_schema = Cache::remember('ClickHouse-schema#' . $this->getTableName(), function () {
-                $rows = $this->select('DESCRIBE ' . $this->_getNamePart())->rows();
-                return array_combine(array_column($rows, 'name'), array_column($rows, 'type'));
-            }, self::CACHE_PROFILE);
-            if (empty($this->_schema)) {
-                throw new RuntimeException('Не могу сформировать схему таблицы ' . $this->_getNamePart());
-            }
-        }
-        return $this->_schema;
+        return $this->_getDescriptor()->getSchema();
     }
 
     /** @inheritdoc */
@@ -163,7 +115,7 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
      */
     protected function _getReader(): ClickHouse
     {
-        return ClickHouse::getInstance(static::READER_CONFIG);
+        return $this->_getDescriptor()->getReader();
     }
 
     /** @inheritdoc */
@@ -193,7 +145,7 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
             throw new LogicException('Не задана константа WRITER_CONFIG для класса ' . static::class);
         }
 
-        return ClickHouse::getInstance(static::WRITER_CONFIG);
+        return $this->_getDescriptor()->getWriter();
     }
 
     /** @inheritdoc */
@@ -309,13 +261,10 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     /** @inheritdoc */
     public function getTableName(?bool $isReaderConfig = true): string
     {
-        $mockTableName = ClickHouseMockCollection::getTableName($this->_getNamePart());
-        if ($mockTableName !== null) {
-            return $mockTableName;
-        }
+        $descriptor = $this->_getDescriptor();
+        $clickHouse = $isReaderConfig ? $descriptor->getReader() : $descriptor->getWriter();
 
-        $clickHouse = $isReaderConfig ? $this->_getReader() : $this->_getWriter();
-        return $clickHouse->getClient()->settings()->getDatabase() . self::TABLE_NAME_DELIMITER . $this->_getNamePart();
+        return $clickHouse->getClient()->settings()->getDatabase() . self::TABLE_NAME_DELIMITER . $descriptor->getName();
     }
 
     /** @inheritdoc */
@@ -360,5 +309,15 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
      */
     private function __clone()
     {
+    }
+
+    /**
+     * Получение дескриптора этой таблицы.
+     *
+     * @return ClickHouseTableDescriptor
+     */
+    private function _getDescriptor(): ClickHouseTableDescriptor
+    {
+        return ClickHouseTableManager::getInstance()->getDescriptor($this);
     }
 }

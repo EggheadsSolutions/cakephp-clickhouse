@@ -51,12 +51,13 @@ abstract class AbstractClickHouseFixtureFactory
      */
     public function persist(): TempTableClickHouse
     {
+        $tableManager = ClickHouseTableManager::getInstance();
         $table = $this->_getTable();
-        $tableName = explode('.', $this->_getTable()->getTableName())[1];
-        $tempTable = new TempTableClickHouse($tableName, $table->getSchema());
+        $tableName = $tableManager->getDescriptor($table, false)->getName();
+        $mockTable = new TempTableClickHouse($tableName, $table->getSchema());
 
         if (count($this->_items) > 0) {
-            $transaction = $tempTable->createTransaction();
+            $transaction = $mockTable->createTransaction();
 
             foreach ($this->_items as $fixture) {
                 $transaction->append($fixture);
@@ -65,9 +66,9 @@ abstract class AbstractClickHouseFixtureFactory
             $transaction->commit();
         }
 
-        ClickHouseMockCollection::add($tableName, $tempTable);
+        $tableManager->mock($table, $mockTable);
 
-        return $tempTable;
+        return $mockTable;
     }
 
     /**

@@ -5,6 +5,7 @@ namespace Eggheads\CakephpClickHouse\Tests\AbstractMySqlEngineClickHouseTableTes
 
 use Cake\Core\Configure;
 use Eggheads\CakephpClickHouse\ClickHouse;
+use Eggheads\CakephpClickHouse\ClickHouseTableManager;
 use Eggheads\CakephpClickHouse\Tests\TestCase;
 
 class MySqlClickHouseTableTest extends TestCase
@@ -38,14 +39,14 @@ class MySqlClickHouseTableTest extends TestCase
         );
 
         // При выключенном моке
-        Configure::write('mockClickHouseDictionary', false);
+        Configure::write(ClickHouseTableManager::USE_DOUBLERS_CONFIG_KEY, false);
         self::assertEquals($testTableName, TestMySqlEngineClickHouseTable::getInstance()->getTableName());
 
         // Чистим инстансы и кэш
         $this->_clearClickHouseTablesInfo();
 
         // При включенном моке
-        Configure::write('mockClickHouseDictionary', true);
+        Configure::write(ClickHouseTableManager::USE_DOUBLERS_CONFIG_KEY, true);
 
         $mockTable = TestMySqlEngineClickHouseTable::getInstance();
         self::assertEquals('default.fake_db_testMySqlEngine', $mockTable->getTableName()); // Имя таблицы подменилось

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Eggheads\CakephpClickHouse;
 
+use Cake\Log\Log;
 use Eggheads\CakephpClickHouse\Entity\MySqlCredentialsItem;
 use LogicException;
 
@@ -15,6 +16,11 @@ abstract class AbstractDictionaryClickHouseTable extends AbstractExternalSourceC
      */
     public function reload(): void
     {
+        if (ClickHouseTableManager::getInstance()->isMocked($this)) {
+            Log::warning('Перезагрузка замоканного словаря ' . static::class);
+            return;
+        }
+
         $this->_getReader()->getClient()->write(
             'SYSTEM RELOAD DICTIONARY {table}',
             [
@@ -24,7 +30,7 @@ abstract class AbstractDictionaryClickHouseTable extends AbstractExternalSourceC
     }
 
     /** @inheritdoc */
-    protected function _getCreateMockTableStatement(string $statement, string $mockTableName, MySqlCredentialsItem $credentialsItem): string
+    public function makeCreateDoublerStatement(string $statement, string $mockTableName, MySqlCredentialsItem $credentialsItem): string
     {
         $patternReplacement = [
             '/HOST \'[^\']+\'/iu' => sprintf("HOST '%s'", $credentialsItem->host),
@@ -40,5 +46,11 @@ abstract class AbstractDictionaryClickHouseTable extends AbstractExternalSourceC
             throw new LogicException('Ошибки при замене');
         }
         return $result;
+    }
+
+    /** @inheritdoc */
+    public function makeDropDoublerStatement(string $doublerFullName): string
+    {
+        return "DROP DICTIONARY IF EXISTS {$doublerFullName}";
     }
 }
