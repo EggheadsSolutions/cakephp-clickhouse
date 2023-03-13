@@ -15,6 +15,11 @@ abstract class AbstractDictionaryClickHouseTable extends AbstractExternalSourceC
      */
     public function reload(): void
     {
+        if (!is_null(ClickHouseMockCollection::getMockTable($this->getNamePart(false)))) {
+            // Не выполняем перезагрузку, если таблица-словарь замокана.
+            return;
+        }
+
         $this->_getReader()->getClient()->write(
             'SYSTEM RELOAD DICTIONARY {table}',
             [

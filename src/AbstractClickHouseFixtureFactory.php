@@ -52,7 +52,7 @@ abstract class AbstractClickHouseFixtureFactory
     public function persist(): TempTableClickHouse
     {
         $table = $this->_getTable();
-        $tableName = explode('.', $this->_getTable()->getTableName())[1];
+        $tableName = $table->getNamePart(false);
         $tempTable = new TempTableClickHouse($tableName, $table->getSchema());
 
         if (count($this->_items) > 0) {

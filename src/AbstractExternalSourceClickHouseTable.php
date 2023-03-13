@@ -16,11 +16,8 @@ abstract class AbstractExternalSourceClickHouseTable extends AbstractClickHouseT
     {
         $originalTableName = parent::_buildTableName();
         if (Configure::read('mockClickHouseDictionary') && !(defined('TEST_MODE') && TEST_MODE)) {
-            if (ClickHouseMockCollection::getTableName($originalTableName)) {
-                throw new LogicException('Мок мока');
-            }
-
-            $readerClient = $this->_getReader()->getClient();
+            $reader = $this->_getReader(false);
+            $readerClient = $reader->getClient();
 
             /** @var string|null $database Имя БД */
             $database = $readerClient->settings()->getDatabase();
@@ -34,11 +31,11 @@ abstract class AbstractExternalSourceClickHouseTable extends AbstractClickHouseT
             $mockTableName = Inflector::underscore($mySQLConfig->database . '_') . $originalTableName; // Имя для словаря-мока
             $mockTableFullName = $database . self::TABLE_NAME_DELIMITER . $mockTableName;
 
-            $originalCreateStatement = $this->_getReader()->getCreateTableStatement($database . self::TABLE_NAME_DELIMITER . $originalTableName);
+            $originalCreateStatement = $reader->getCreateTableStatement($database . self::TABLE_NAME_DELIMITER . $originalTableName);
             $mockCreateStatement = $this->_getCreateMockTableStatement($originalCreateStatement, $mockTableFullName, $mySQLConfig);
 
-            $isExistMockDictTable = $this->_getReader()->isTableExist($mockTableFullName);
-            $currentMockCreateStatement = $isExistMockDictTable ? $this->_getReader()->getCreateTableStatement($mockTableFullName) : '';
+            $isExistMockDictTable = $reader->isTableExist($mockTableFullName);
+            $currentMockCreateStatement = $isExistMockDictTable ? $reader->getCreateTableStatement($mockTableFullName) : '';
 
             if ($mockCreateStatement !== $currentMockCreateStatement) {
                 $this->_dropTableIfExist($mockTableName);
@@ -68,6 +65,6 @@ abstract class AbstractExternalSourceClickHouseTable extends AbstractClickHouseT
     private function _dropTableIfExist(string $tableName)
     {
         $entity = $this instanceof AbstractDictionaryClickHouseTable ? 'DICTIONARY' : 'TABLE';
-        $this->_getReader()->getClient()->write("DROP $entity IF EXISTS {table}", ['table' => $tableName]);
+        $this->_getReader(false)->getClient()->write("DROP $entity IF EXISTS {table}", ['table' => $tableName]);
     }
 }

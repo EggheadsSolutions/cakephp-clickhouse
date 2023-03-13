@@ -36,13 +36,13 @@ class ClickHouseMockCollection
     }
 
     /**
-     * Получить название временной таблицы для подстановки в sql вместо названия основной таблицы
+     * Получить экземпляр временной таблицы, используемой как подстановка для основной таблицы
      *
      * @param string $tableName
-     * @return string|null
+     * @return TempTableClickHouse|null
      */
-    public static function getTableName(string $tableName): ?string
+    public static function getMockTable(string $tableName): ?TempTableClickHouse
     {
-        return array_key_exists($tableName, self::$_collection) ? self::$_collection[$tableName]->getName() : null;
+        return self::$_collection[$tableName] ?? null;
     }
 }
