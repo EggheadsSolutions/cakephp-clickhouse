@@ -9,7 +9,7 @@ use LogicException;
 class AbstractMySqlEngineClickHouseTable extends AbstractExternalSourceClickHouseTable
 {
     /** @inheritdoc */
-    protected function _getCreateMockTableStatement(string $statement, string $mockTableName, MySqlCredentialsItem $credentialsItem): string
+    public function makeCreateDoublerStatement(string $statement, string $mockTableName, MySqlCredentialsItem $credentialsItem): string
     {
         $connectionRegExp = '/MySQL\([^)]+\)/iu';
 
@@ -41,5 +41,11 @@ class AbstractMySqlEngineClickHouseTable extends AbstractExternalSourceClickHous
             throw new LogicException('Ошибки при замене');
         }
         return $result;
+    }
+
+    /** @inheritdoc */
+    public function makeDropDoublerStatement(string $doublerFullName): string
+    {
+        return "DROP TABLE IF EXISTS {$doublerFullName}";
     }
 }

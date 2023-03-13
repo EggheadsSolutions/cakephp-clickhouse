@@ -6,8 +6,7 @@ namespace Eggheads\CakephpClickHouse\Tests;
 use Cake\Cache\Cache;
 use Cake\TestSuite\TestCase as BaseTestCase;
 use Eggheads\CakephpClickHouse\AbstractClickHouseTable;
-use Eggheads\CakephpClickHouse\ClickHouseMockCollection;
-use Eggheads\Mocks\PropertyAccess;
+use Eggheads\CakephpClickHouse\ClickHouseTableManager;
 
 class TestCase extends BaseTestCase
 {
@@ -36,8 +35,7 @@ class TestCase extends BaseTestCase
      */
     protected function _clearClickHouseTablesInfo(): void
     {
-        ClickHouseMockCollection::clear();
-        PropertyAccess::setStatic(AbstractClickHouseTable::class, '_instances', []);
+        ClickHouseTableManager::clearInstance();
         Cache::clear(AbstractClickHouseTable::CACHE_PROFILE);
     }
 

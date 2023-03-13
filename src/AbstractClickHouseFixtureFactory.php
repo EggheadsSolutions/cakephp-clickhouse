@@ -51,12 +51,25 @@ abstract class AbstractClickHouseFixtureFactory
      */
     public function persist(): TempTableClickHouse
     {
+        $tableManager = ClickHouseTableManager::getInstance();
         $table = $this->_getTable();
-        $tableName = explode('.', $this->_getTable()->getTableName())[1];
-        $tempTable = new TempTableClickHouse($tableName, $table->getSchema());
+        $descriptor = $tableManager->getDescriptor($table);
+
+        $mockTable = $descriptor->getMockTable();
+        if (is_null($mockTable)) {
+            $mockProfile = TempTableClickHouse::DEFAULT_PROFILE;
+            $mockTable = new TempTableClickHouse($descriptor->getName(), $descriptor->getSchema(), '', [], $mockProfile);
+
+            $descriptorToSet = new ClickHouseTableDescriptor(
+                $mockTable->getNamePart(),
+                $mockProfile,
+                $descriptor->hasWriter() ? $mockProfile : null,
+                $mockTable,
+            );
+        }
 
         if (count($this->_items) > 0) {
-            $transaction = $tempTable->createTransaction();
+            $transaction = $mockTable->createTransaction();
 
             foreach ($this->_items as $fixture) {
                 $transaction->append($fixture);
@@ -65,9 +78,11 @@ abstract class AbstractClickHouseFixtureFactory
             $transaction->commit();
         }
 
-        ClickHouseMockCollection::add($tableName, $tempTable);
+        if (isset($descriptorToSet)) {
+            $tableManager->setDescriptor($table, $descriptorToSet);
+        }
 
-        return $tempTable;
+        return $mockTable;
     }
 
     /**
