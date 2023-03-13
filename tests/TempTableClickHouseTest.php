@@ -34,7 +34,7 @@ class TempTableClickHouseTest extends TestCase
         FrozenTime::setTestNow('2022-04-22 18:43:00');
         $set = new TempTableClickHouse('Set', ['id' => 'int', 'String'], "SELECT :id, '1'", ['id' => 123], self::CH_PROFILE);
         $tableName = $set->getName();
-        $this->assertTextContains('tempSet_220422184300_0', $tableName);
+        self::assertStringStartsWith('default.tempSet_220422184300_', $tableName);
 
         $result = ClickHouse::getInstance(self::CH_PROFILE)->select('SELECT * FROM ' . $tableName)->rows();
         self::assertCount(1, $result);
@@ -44,7 +44,7 @@ class TempTableClickHouseTest extends TestCase
         Configure::write('tempTableClickHousePrefix', 'test');
         $set = new TempTableClickHouse('Set', ['id' => 'int', 'String'], "SELECT :id, '1'", ['id' => 123], self::CH_PROFILE);
         $tableName = $set->getName();
-        $this->assertTextContains('testSet_220422184300_0', $tableName);
+        self::assertStringStartsWith('default.testSet_220422184300_', $tableName);
     }
 
     /**
