@@ -13,7 +13,6 @@ use Eggheads\CakephpClickHouse\ClickHouseTableInterface;
 use Eggheads\CakephpClickHouse\TempTableClickHouse;
 use Eggheads\Mocks\ConstantMocker;
 use Eggheads\Mocks\MethodMocker;
-use function PHPUnit\Framework\assertEquals;
 
 class TestClickHouseTableTest extends TestCase
 {
@@ -93,8 +92,7 @@ class TestClickHouseTableTest extends TestCase
         ];
         $testTable->insert($svData);
 
-        $selectAllQuery = 'SELECT * FROM ' . $testTable->getTableName();
-        self::assertEquals($svData, $testTable->select($selectAllQuery)->rows());
+        self::assertEquals($svData, $this->_getAllRows($testTable));
 
         self::assertEquals(1, $testTable->getTotal(FrozenDate::parse('2020-08-02')));
         self::assertTrue($testTable->hasData(FrozenDate::parse('2020-08-02')));
@@ -108,14 +106,14 @@ class TestClickHouseTableTest extends TestCase
 
         self::assertFalse($testTable->hasData(FrozenDate::parse('2016-08-02')));
 
-        assertEquals('2020-08-04', $testTable->getMaxDate('created')->toDateString());
+        self::assertEquals('2020-08-04', $testTable->getMaxDate('created')->toDateString());
 
         $testTable->deleteAll("id = :id", ['id' => '1']);
         sleep(1);
-        self::assertEquals([$svData[1]], $testTable->select($selectAllQuery)->rows());
+        self::assertEquals([$svData[1]], $this->_getAllRows($testTable));
 
         $testTable->truncate();
-        self::assertEmpty($testTable->select($selectAllQuery)->rows());
+        self::assertEmpty($this->_getAllRows($testTable));
     }
 
     /**
@@ -146,11 +144,9 @@ class TestClickHouseTableTest extends TestCase
         ];
         $testTable->insert($svData);
 
-        $selectAllQuery = 'SELECT * FROM ' . $testTable->getTableName();
-
-        self::assertNotEmpty($testTable->select($selectAllQuery)->rows());
+        self::assertNotEmpty($this->_getAllRows($testTable));
         $testTable->deleteAllSync("id > :aboveId", ['aboveId' => '0']);
-        self::assertEmpty($testTable->select($selectAllQuery)->rows());
+        self::assertEmpty($this->_getAllRows($testTable));
     }
 
     /**
@@ -184,11 +180,6 @@ class TestClickHouseTableTest extends TestCase
         $testTable = TestClickHouseTable::getInstance();
         self::assertNotNull(ClickHouseMockCollection::getTableName(self::TABLE_NAME));
 
-        $statement = $testTable->select(
-            'SELECT * FROM {tableName} ORDER BY checkDate',
-            ['tableName' => $testTable->getTableName()]
-        );
-
         self::assertEquals(
             [
                 [
@@ -213,7 +204,7 @@ class TestClickHouseTableTest extends TestCase
                     'created' => '2020-03-01 23:12:12',
                 ],
             ],
-            $statement->rows()
+            $this->_getAllRows($testTable),
         );
     }
 
@@ -285,5 +276,16 @@ class TestClickHouseTableTest extends TestCase
             'hasMutations * 4' => [4],
             'hasMutations * 0' => [0],
         ];
+    }
+
+    /**
+     * Получение всех строк таблицы.
+     *
+     * @param AbstractClickHouseTable $table
+     * @return mixed[]
+     */
+    private function _getAllRows(AbstractClickHouseTable $table): array
+    {
+        return $table->select("SELECT * FROM {table}", ['table' => $table->getTableName()])->rows();
     }
 }
