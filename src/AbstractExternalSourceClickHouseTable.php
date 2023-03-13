@@ -11,15 +11,16 @@ use LogicException;
 
 abstract class AbstractExternalSourceClickHouseTable extends AbstractClickHouseTable
 {
-    /** @inheritdoc */
-    protected function _buildTableName(): string
-    {
-        $originalTableName = parent::_buildTableName();
-        if (Configure::read('mockClickHouseDictionary') && !(defined('TEST_MODE') && TEST_MODE)) {
-            if (ClickHouseMockCollection::getTableName($originalTableName)) {
-                throw new LogicException('Мок мока');
-            }
+    /** @var string|null Имя подменённой таблицы */
+    private ?string $_mockTableName = null;
 
+    /** @inheritDoc */
+    protected function __construct()
+    {
+        parent::__construct();
+
+        if (Configure::read('mockClickHouseDictionary') && !(defined('TEST_MODE') && TEST_MODE)) {
+            $originalTableName = $this->getNamePart();
             $readerClient = $this->_getReader()->getClient();
 
             /** @var string|null $database Имя БД */
@@ -44,9 +45,27 @@ abstract class AbstractExternalSourceClickHouseTable extends AbstractClickHouseT
                 $this->_dropTableIfExist($mockTableName);
                 $readerClient->write($mockCreateStatement);
             }
-            return $mockTableName;
+
+            $this->_mockTableName = $mockTableName;
         }
-        return $originalTableName;
+    }
+
+    /** @inheritDoc */
+    public function getNamePart(bool $useMock = true): string
+    {
+        return $this->_mockTableName ?? parent::getNamePart(false);
+    }
+
+    /** @inheritDoc */
+    protected function _getReader(bool $useMock = true): ClickHouse
+    {
+        return parent::_getReader(false);
+    }
+
+    /** @inheritDoc */
+    protected function _getWriter(bool $useMock = true): ClickHouse
+    {
+        return parent::_getWriter(false);
     }
 
     /**

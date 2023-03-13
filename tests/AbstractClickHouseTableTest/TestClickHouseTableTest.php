@@ -13,6 +13,7 @@ use Eggheads\CakephpClickHouse\ClickHouseTableInterface;
 use Eggheads\CakephpClickHouse\TempTableClickHouse;
 use Eggheads\Mocks\ConstantMocker;
 use Eggheads\Mocks\MethodMocker;
+use Throwable;
 use function PHPUnit\Framework\assertEquals;
 
 class TestClickHouseTableTest extends TestCase
@@ -162,51 +163,117 @@ class TestClickHouseTableTest extends TestCase
         self::assertEquals($testTableName, $testTable->getTableName());
 
         $tempTable = TempTableClickHouse::createFromTable('clone', TestClickHouseTable::getInstance());
-        ClickHouseMockCollection::add(self::TABLE_NAME, $tempTable);
+        ClickHouseMockCollection::add($testTable->getNamePart(false), $tempTable);
         self::assertEquals($tempTable->getName(), $testTable->getTableName());
+        self::assertEquals($tempTable->getName(), $testTable->getTableName(false));
 
         ClickHouseMockCollection::clear();
         self::assertEquals($testTableName, $testTable->getTableName());
     }
 
     /**
-     * @testdox Проверим создание и заполнение временной таблицы при использовании фикстур
+     * @testdox Проверим создание, заполнение и мутации таблицы при использовании фикстур
      *
      * @return void
+     * @throws Throwable
      */
     public function testFixtureFactory(): void
     {
+        $testTable = TestClickHouseTable::getInstance();
+
+        // Наполняем оригинальную таблицу данными для проверки, что мок не затрагивает её данные
+        $originalRows = [
+            [
+                'id' => 'SomeOriginalId',
+                'url' => 'SomeOriginalUrl',
+                'data' => 17.3,
+                'checkDate' => '2023-01-01',
+                'created' => '2023-01-01 21:11:11',
+            ],
+        ];
+        $testTable->insert($originalRows);
+
+        // Инициализируем фикстуру и проверяем корректность её инициализации
         (new TestClickhouseFixtureFactory([['id' => 'id1', 'checkDate' => '2021-01-03',]], 2))->persist();
 
-        $testTable = TestClickHouseTable::getInstance();
-        self::assertNotNull(ClickHouseMockCollection::getTableName(self::TABLE_NAME));
+        $mockTable = ClickHouseMockCollection::getMockTable($testTable->getNamePart(false));
 
-        self::assertEquals(
+        self::assertNotNull($mockTable);
+        self::assertSame($mockTable->getName(), $testTable->getTableName());
+        self::assertSame($mockTable->getName(), $testTable->getTableName(false));
+
+        $expectedRows = [
             [
-                [
-                    'id' => 'id1',
-                    'url' => 'String',
-                    'data' => 10.2,
-                    'checkDate' => '2021-01-03',
-                    'created' => '2020-03-01 23:12:12',
-                ],
-                [
-                    'id' => 'String',
-                    'url' => 'String',
-                    'data' => 10.2,
-                    'checkDate' => '2022-01-03',
-                    'created' => '2020-03-01 23:12:12',
-                ],
-                [
-                    'id' => 'String',
-                    'url' => 'String',
-                    'data' => 10.2,
-                    'checkDate' => '2022-01-03',
-                    'created' => '2020-03-01 23:12:12',
-                ],
+                'id' => 'id1',
+                'url' => 'String',
+                'data' => 10.2,
+                'checkDate' => '2021-01-03',
+                'created' => '2020-03-01 23:12:12',
             ],
-            $this->_getAllRows($testTable),
-        );
+            [
+                'id' => 'String',
+                'url' => 'String',
+                'data' => 10.2,
+                'checkDate' => '2022-01-03',
+                'created' => '2020-03-01 23:12:12',
+            ],
+            [
+                'id' => 'String',
+                'url' => 'String',
+                'data' => 10.2,
+                'checkDate' => '2022-01-03',
+                'created' => '2020-03-01 23:12:12',
+            ],
+        ];
+        self::assertSame($expectedRows, $this->_getAllRows($mockTable));
+        self::assertSame($expectedRows, $this->_getAllRows($testTable));
+
+        // Проверяем очистку таблицы
+        $testTable->truncate();
+
+        self::assertEmpty($this->_getAllRows($mockTable));
+        self::assertEmpty($this->_getAllRows($testTable));
+
+        // Проверяем вставку в таблицу
+        $rowToInsert = [
+            'id' => 'SomeInsertId',
+            'url' => 'SomeInsertUrl',
+            'data' => 15.5,
+            'checkDate' => '2023-03-03',
+            'created' => '2023-03-03 23:33:33',
+        ];
+
+        $testTable->insert($rowToInsert);
+
+        self::assertSame([$rowToInsert], $this->_getAllRows($mockTable));
+        self::assertSame([$rowToInsert], $this->_getAllRows($testTable));
+
+        // Проверяем удаление из таблицы
+        $testTable->deleteAll('TRUE');
+
+        self::assertEmpty($this->_getAllRows($mockTable));
+        self::assertEmpty($this->_getAllRows($testTable));
+
+        // Проверяем транзакции
+        $rowToAppend = [
+            'id' => 'SomeAppendId',
+            'url' => 'SomeAppendUrl',
+            'data' => 75.1,
+            'checkDate' => '2023-03-03',
+            'created' => '2023-03-03 23:33:33',
+        ];
+
+        $transaction = $testTable->createTransaction();
+        $transaction->append($rowToAppend);
+        $transaction->commit();
+
+        self::assertSame([$rowToAppend], $this->_getAllRows($mockTable));
+        self::assertSame([$rowToAppend], $this->_getAllRows($testTable));
+
+        // Проверяем, что мок не затронул данные оригинальной таблицы.
+        ClickHouseMockCollection::clear();
+
+        self::assertSame($originalRows, $this->_getAllRows($testTable));
     }
 
     /**
@@ -282,11 +349,15 @@ class TestClickHouseTableTest extends TestCase
     /**
      * Получение всех строк таблицы.
      *
-     * @param AbstractClickHouseTable $table
+     * @param AbstractClickHouseTable|TempTableClickHouse $table
      * @return mixed[]
      */
-    private function _getAllRows(AbstractClickHouseTable $table): array
+    private function _getAllRows($table): array
     {
+        if ($table instanceof TempTableClickHouse) {
+            return $table->getClickHouse()->select("SELECT * FROM {table}", ['table' => $table->getName()])->rows();
+        }
+
         return $table->select("SELECT * FROM {table}", ['table' => $table->getTableName()])->rows();
     }
 }

@@ -115,13 +115,35 @@ class TempTableClickHouse
     }
 
     /**
-     * Получаем имя
+     * Получаем полное имя таблицы с префиксом БД
      *
      * @return string
      */
     public function getName(): string
     {
         return $this->_clickHouse->getClient()->settings()->getDatabase() . '.' . $this->_name;
+    }
+
+    /**
+     * Получение части имени таблицы без префикса БД
+     *
+     * @internal
+     * @return string
+     */
+    public function getNamePart(): string
+    {
+        return $this->_name;
+    }
+
+    /**
+     * Получение экземпляра профиля ClickHouse
+     *
+     * @internal
+     * @return ClickHouse
+     */
+    public function getClickHouse(): ClickHouse
+    {
+        return $this->_clickHouse;
     }
 
     /**
