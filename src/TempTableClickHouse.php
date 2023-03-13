@@ -99,7 +99,7 @@ class TempTableClickHouse
         $date = FrozenTime::now();
 
         $prefix = Configure::read(self::TEMP_TABLE_PREFIX_SETTING) ?? self::DEFAULT_PREFIX;
-        $this->_name = $prefix . ucfirst($name) . '_' . $date->format('ymdHis') . '_' . $date->microsecond;
+        $this->_name = $prefix . ucfirst($name) . '_' . $date->format('ymdHis') . '_' . uniqid();
         $this->_clickHouse = ClickHouse::getInstance($profile);
 
         $this->_create($typeMap);
