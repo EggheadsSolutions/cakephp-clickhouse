@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace Eggheads\CakephpClickHouse\Tests\ChunksConditionQueryBuilderTest;
 
-use Cake\TestSuite\TestCase;
 use Eggheads\CakephpClickHouse\ChunksConditionQueryBuilder;
+use Eggheads\CakephpClickHouse\Tests\TestCase;
 
 class ChunksConditionQueryBuilderTest extends TestCase
 {

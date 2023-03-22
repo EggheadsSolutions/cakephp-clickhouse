@@ -3,32 +3,30 @@ declare(strict_types=1);
 
 namespace Eggheads\CakephpClickHouse\Tests\AbstractClickHouseTableTest;
 
-use Cake\Cache\Cache;
 use Cake\I18n\FrozenDate;
-use Cake\TestSuite\TestCase;
 use Eggheads\CakephpClickHouse\AbstractClickHouseTable;
 use Eggheads\CakephpClickHouse\ClickHouse;
 use Eggheads\CakephpClickHouse\ClickHouseMockCollection;
 use Eggheads\CakephpClickHouse\ClickHouseTableInterface;
 use Eggheads\CakephpClickHouse\TempTableClickHouse;
+use Eggheads\CakephpClickHouse\Tests\TestCase;
 use Eggheads\Mocks\ConstantMocker;
 use Eggheads\Mocks\MethodMocker;
 
 class TestClickHouseTableTest extends TestCase
 {
     /** Имя тестовой таблицы */
-    private const TABLE_NAME = 'test';
+    private const TABLE_NAME = 'default.test';
+
+    /** Имя тестовой таблицы без префикса БД */
+    private const TABLE_SHORT_NAME = 'test';
 
     /** @inerhitDoc */
     public function setUp(): void
     {
         parent::setUp();
 
-        $writer = ClickHouse::getInstance('writer');
-        $writerTableName = TestClickHouseTable::getInstance()->getTableName(false);
-
-        $writer->getClient()->write('DROP TABLE IF EXISTS {table}', ['table' => $writerTableName]);
-        $writer->getClient()->write(
+        ClickHouse::getInstance(TestClickHouseTable::WRITER_CONFIG)->getClient()->write(
             'CREATE TABLE {table}
             (
                 id      String,
@@ -37,11 +35,8 @@ class TestClickHouseTableTest extends TestCase
                 checkDate Date,
                 created DateTime
             ) ENGINE = MergeTree() ORDER BY id',
-            ['table' => $writerTableName]
+            ['table' => self::TABLE_NAME]
         );
-
-        Cache::disable();
-        ClickHouseMockCollection::clear();
     }
 
     /** @inheritDoc */
@@ -51,7 +46,12 @@ class TestClickHouseTableTest extends TestCase
 
         ConstantMocker::restore();
         MethodMocker::restore($this->hasFailed());
-        ClickHouseMockCollection::clear();
+    }
+
+    /** @inheritdoc */
+    protected function _dropClickHouseTables(): void
+    {
+        ClickHouse::getInstance(TestClickHouseTable::WRITER_CONFIG)->getClient()->write('DROP TABLE IF EXISTS {table}', ['table' => self::TABLE_NAME]);
     }
 
     /**
@@ -157,12 +157,13 @@ class TestClickHouseTableTest extends TestCase
     public function testGetTableName(): void
     {
         $testTable = TestClickHouseTable::getInstance();
-        $testTableName = 'default.' . self::TABLE_NAME;
+        $testTableName = self::TABLE_NAME;
         self::assertEquals($testTableName, $testTable->getTableName());
 
-        $tempTable = TempTableClickHouse::createFromTable('clone', TestClickHouseTable::getInstance());
-        ClickHouseMockCollection::add(self::TABLE_NAME, $tempTable);
-        self::assertEquals($tempTable->getName(), $testTable->getTableName());
+        $mockTable = TempTableClickHouse::createFromTable('clone', $testTable);
+        ClickHouseMockCollection::add(self::TABLE_SHORT_NAME, $mockTable);
+        self::assertEquals($mockTable->getName(), $testTable->getTableName());
+        self::assertEquals($mockTable->getName(), $testTable->getTableName(false));
 
         ClickHouseMockCollection::clear();
         self::assertEquals($testTableName, $testTable->getTableName());
@@ -178,7 +179,7 @@ class TestClickHouseTableTest extends TestCase
         (new TestClickhouseFixtureFactory([['id' => 'id1', 'checkDate' => '2021-01-03',]], 2))->persist();
 
         $testTable = TestClickHouseTable::getInstance();
-        self::assertNotNull(ClickHouseMockCollection::getTableName(self::TABLE_NAME));
+        self::assertNotNull(ClickHouseMockCollection::getTableName(self::TABLE_SHORT_NAME));
 
         self::assertEquals(
             [

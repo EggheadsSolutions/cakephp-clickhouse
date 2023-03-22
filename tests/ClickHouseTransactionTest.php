@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace Eggheads\CakephpClickHouse\Tests;
 
-use Cake\Cache\Cache;
-use Cake\TestSuite\TestCase;
 use ClickHouseDB\Client;
 use ClickHouseDB\Settings;
 use Eggheads\CakephpClickHouse\ClickHouse;
@@ -16,7 +14,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 class ClickHouseTransactionTest extends TestCase
 {
     /** Название тестовой таблицы */
-    private const TABLE = 'testTransaction';
+    private const TABLE = 'default.testTransaction';
 
     /** Название профиля подключения ClickHouse */
     private const CH_PROFILE = 'writer';
@@ -130,9 +128,7 @@ class ClickHouseTransactionTest extends TestCase
     {
         parent::setUp();
 
-        $writer = ClickHouse::getInstance(self::CH_PROFILE);
-        $writer->getClient()->write('DROP TABLE IF EXISTS {table}', ['table' => self::TABLE]);
-        $writer->getClient()->write(
+        ClickHouse::getInstance(self::CH_PROFILE)->getClient()->write(
             "CREATE TABLE {table}
             (
                 field1  String,
@@ -140,7 +136,11 @@ class ClickHouseTransactionTest extends TestCase
             ) ENGINE = MergeTree() ORDER BY field1",
             ['table' => self::TABLE]
         );
+    }
 
-        Cache::disable();
+    /** @inerhitdoc */
+    protected function _dropClickHouseTables(): void
+    {
+        ClickHouse::getInstance(self::CH_PROFILE)->getClient()->write('DROP TABLE IF EXISTS {table}', ['table' => self::TABLE]);
     }
 }
