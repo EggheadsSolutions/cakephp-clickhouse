@@ -1,7 +1,11 @@
 <?php
 declare(strict_types=1);
 
+use Cake\Cache\Cache;
+use Cake\Cache\Engine\ArrayEngine;
 use Cake\Core\Configure;
+use Cake\Datasource\ConnectionManager;
+use Eggheads\CakephpClickHouse\AbstractClickHouseTable;
 
 define(
     'CLICKHOUSE_CONFIG',
@@ -25,3 +29,19 @@ Configure::write(
         'temp' => CLICKHOUSE_CONFIG,
     ]
 );
+
+ConnectionManager::setConfig([
+    'default' => [
+        'database' => 'fake_db',
+        'port' => '3306',
+        'username' => 'fake_user',
+        'password' => 'fake_password',
+        'host' => 'fake_host',
+    ],
+]);
+
+Cache::setConfig([
+    AbstractClickHouseTable::CACHE_PROFILE => [
+        'className' => ArrayEngine::class,
+    ],
+]);

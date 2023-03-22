@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Eggheads\CakephpClickHouse\Tests;
 
-use Cake\TestSuite\TestCase;
 use Eggheads\CakephpClickHouse\ClickHouse;
 
 class ClickHouseTest extends TestCase
