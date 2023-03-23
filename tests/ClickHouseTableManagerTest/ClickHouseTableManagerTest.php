@@ -61,16 +61,21 @@ class ClickHouseTableManagerTest extends TestCase
     }
 
     /**
-     * Тестирование получения экземпляра одиночки.
+     * Тестирование получения и очистки экземпляра-одиночки.
      *
      * @return void
      * @covers ClickHouseTableManager::getInstance
+     * @covers ClickHouseTableManager::clearInstance
      */
-    public function testGetInstance(): void
+    public function testGetAndClearInstance(): void
     {
         $instance = ClickHouseTableManager::getInstance();
 
         self::assertSame($instance, ClickHouseTableManager::getInstance());
+
+        ClickHouseTableManager::clearInstance();
+
+        self::assertNotSame($instance, ClickHouseTableManager::getInstance());
     }
 
     /**

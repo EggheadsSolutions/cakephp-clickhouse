@@ -54,6 +54,16 @@ class ClickHouseTableManager
     }
 
     /**
+     * Очистка экземпляра-одиночки этого класса.
+     *
+     * @return void
+     */
+    public static function clearInstance(): void
+    {
+        self::$_instance = null;
+    }
+
+    /**
      * Получение дескриптора таблицы.
      *
      * @param AbstractClickHouseTable $table

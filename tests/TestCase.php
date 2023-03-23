@@ -7,7 +7,6 @@ use Cake\Cache\Cache;
 use Cake\TestSuite\TestCase as BaseTestCase;
 use Eggheads\CakephpClickHouse\AbstractClickHouseTable;
 use Eggheads\CakephpClickHouse\ClickHouseTableManager;
-use Eggheads\Mocks\PropertyAccess;
 
 class TestCase extends BaseTestCase
 {
@@ -36,7 +35,7 @@ class TestCase extends BaseTestCase
      */
     protected function _clearClickHouseTablesInfo(): void
     {
-        PropertyAccess::setStatic(ClickHouseTableManager::class, '_instance', null);
+        ClickHouseTableManager::clearInstance();
         Cache::clear(AbstractClickHouseTable::CACHE_PROFILE);
     }
 
