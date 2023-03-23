@@ -64,6 +64,7 @@ class ClickHouseTableManagerTest extends TestCase
      * Тестирование получения экземпляра одиночки.
      *
      * @return void
+     * @covers ClickHouseTableManager::getInstance
      */
     public function testGetInstance(): void
     {
@@ -165,6 +166,7 @@ class ClickHouseTableManagerTest extends TestCase
      * Тестирование ошибки когда не задана константа {@see AbstractClickHouseTable::TABLE} и имя класса таблицы не соответствует конвенции.
      *
      * @return void
+     * @covers ClickHouseTableManager::getDescriptor
      */
     public function testGetDescriptorForBadTableObjects(): void
     {

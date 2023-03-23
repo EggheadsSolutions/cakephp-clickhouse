@@ -173,6 +173,7 @@ class TestClickHouseTableTest extends TestCase
      *
      * @return void
      * @covers AbstractClickHouseTable::getTableName
+     * @covers AbstractClickHouseTable::select
      * @covers AbstractClickHouseTable::truncate
      * @covers AbstractClickHouseTable::insert
      * @covers AbstractClickHouseTable::deleteAll
