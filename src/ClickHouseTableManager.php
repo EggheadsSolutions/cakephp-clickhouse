@@ -23,9 +23,6 @@ class ClickHouseTableManager
     /** @var array<string, ClickHouseTableDescriptor> Карта дескрипторов по имени таблицы */
     private array $_descriptorByName = [];
 
-    /** @var array<string, TempTableClickHouse> Карта временных мок-таблиц по имени таблицы */
-    private array $_mockTableByName = [];
-
     /** @var self|null Экземпляр-одиночка этого класса */
     private static ?self $_instance = null; // phpcs:ignore Squiz.Commenting.VariableComment.Missing
 
@@ -67,62 +64,25 @@ class ClickHouseTableManager
      * Получение дескриптора таблицы.
      *
      * @param AbstractClickHouseTable $table
-     * @param bool $useMock
      * @return ClickHouseTableDescriptor
      */
-    public function getDescriptor(AbstractClickHouseTable $table, bool $useMock = true): ClickHouseTableDescriptor
+    public function getDescriptor(AbstractClickHouseTable $table): ClickHouseTableDescriptor
     {
         $name = $this->_resolveName($table);
-
-        if ($useMock && isset($this->_mockTableByName[$name])) {
-            return $this->_mockTableByName[$name]->getDescriptor();
-        }
 
         return $this->_descriptorByName[$name] ??= $this->_createDescriptor($table, $name);
     }
 
     /**
-     * Замокивание таблицы.
+     * Назначение дескриптора таблицы.
      *
      * @param AbstractClickHouseTable $table
-     * @param TempTableClickHouse $mockTable
+     * @param ClickHouseTableDescriptor $descriptor
      * @return void
      */
-    public function mock(AbstractClickHouseTable $table, TempTableClickHouse $mockTable): void
+    public function setDescriptor(AbstractClickHouseTable $table, ClickHouseTableDescriptor $descriptor): void
     {
-        $this->_mockTableByName[$this->_resolveName($table)] = $mockTable;
-    }
-
-    /**
-     * Проверка, замокана ли таблица.
-     *
-     * @param AbstractClickHouseTable $table
-     * @return bool
-     */
-    public function isMocked(AbstractClickHouseTable $table): bool
-    {
-        return isset($this->_mockTableByName[$this->_resolveName($table)]);
-    }
-
-    /**
-     * Получение временной мок-таблицы.
-     *
-     * @param AbstractClickHouseTable $table
-     * @return TempTableClickHouse|null
-     */
-    public function getMockTable(AbstractClickHouseTable $table): ?TempTableClickHouse
-    {
-        return $this->_mockTableByName[$this->_resolveName($table)] ?? null;
-    }
-
-    /**
-     * Размокивание всех таблиц.
-     *
-     * @return void
-     */
-    public function clearMocks(): void
-    {
-        $this->_mockTableByName = [];
+        $this->_descriptorByName[$this->_resolveName($table)] = $descriptor;
     }
 
     /**
@@ -157,17 +117,15 @@ class ClickHouseTableManager
      */
     private function _createDescriptor(AbstractClickHouseTable $table, string $name): ClickHouseTableDescriptor
     {
-        if ($table instanceof AbstractExternalSourceClickHouseTable) {
-            $readerProfile = $table::READER_CONFIG;
+        $readerProfile = $table::READER_CONFIG;
 
-            if (Configure::read(self::USE_DOUBLERS_CONFIG_KEY) && !(defined('TEST_MODE') && TEST_MODE)) {
-                $name = $this->_initDoubler($table, $name, $readerProfile);
-            }
-
-            return new ClickHouseTableDescriptor($name, $readerProfile, $readerProfile);
+        if ($table instanceof AbstractExternalSourceClickHouseTable
+            && Configure::read(self::USE_DOUBLERS_CONFIG_KEY) && !(defined('TEST_MODE') && TEST_MODE)
+        ) {
+            $name = $this->_initDoubler($table, $name, $readerProfile);
         }
 
-        return new ClickHouseTableDescriptor($name, $table::READER_CONFIG, $table::WRITER_CONFIG ?: null);
+        return new ClickHouseTableDescriptor($name, $readerProfile, $table::WRITER_CONFIG ?: null);
     }
 
     /**

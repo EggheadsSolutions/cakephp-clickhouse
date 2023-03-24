@@ -7,4 +7,6 @@ use Eggheads\CakephpClickHouse\AbstractMySqlEngineClickHouseTable;
 
 class TestMysqlExternalClickHouseTable extends AbstractMySqlEngineClickHouseTable
 {
+    /** @inheritdoc */
+    public const WRITER_CONFIG = 'writer';
 }

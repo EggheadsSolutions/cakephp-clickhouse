@@ -6,9 +6,9 @@ namespace Eggheads\CakephpClickHouse\Tests\AbstractClickHouseTableTest;
 use Cake\I18n\FrozenDate;
 use Eggheads\CakephpClickHouse\AbstractClickHouseTable;
 use Eggheads\CakephpClickHouse\ClickHouse;
+use Eggheads\CakephpClickHouse\ClickHouseTableDescriptor;
 use Eggheads\CakephpClickHouse\ClickHouseTableInterface;
 use Eggheads\CakephpClickHouse\ClickHouseTableManager;
-use Eggheads\CakephpClickHouse\TempTableClickHouse;
 use Eggheads\CakephpClickHouse\Tests\TestCase;
 use Eggheads\Mocks\ConstantMocker;
 use Eggheads\Mocks\MethodMocker;
@@ -153,18 +153,16 @@ class TestClickHouseTableTest extends TestCase
      */
     public function testGetTableName(): void
     {
-        $tableManager = ClickHouseTableManager::getInstance();
-
         $testTable = TestClickHouseTable::getInstance();
         $testTableName = self::TABLE_NAME;
         self::assertEquals($testTableName, $testTable->getTableName());
 
-        $mockTable = TempTableClickHouse::createFromTable('clone', $testTable);
-        $tableManager->mock($testTable, $mockTable);
-        self::assertEquals($mockTable->getName(), $testTable->getTableName());
-        self::assertEquals($mockTable->getName(), $testTable->getTableName(false));
+        $fakeDescriptor = new ClickHouseTableDescriptor('someFakeName', 'default', 'writer');
+        ClickHouseTableManager::getInstance()->setDescriptor($testTable, $fakeDescriptor);
+        self::assertEquals('default.someFakeName', $testTable->getTableName());
+        self::assertEquals('default.someFakeName', $testTable->getTableName(false));
 
-        $tableManager->clearMocks();
+        ClickHouseTableManager::clearInstance();
         self::assertEquals($testTableName, $testTable->getTableName());
     }
 
@@ -264,7 +262,7 @@ class TestClickHouseTableTest extends TestCase
         self::assertSame([$rowToAppend], $this->_getAllRows($testTable));
 
         // Проверяем, что мок не затронул данные оригинальной таблицы.
-        ClickHouseTableManager::getInstance()->clearMocks();
+        ClickHouseTableManager::clearInstance();
 
         self::assertSame($originalRows, $this->_getAllRows($testTable));
     }

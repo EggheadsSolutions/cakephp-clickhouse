@@ -36,7 +36,7 @@ class TempTableClickHouse
     private const TEMP_TABLE_PREFIX_SETTING = 'tempTableClickHousePrefix';
 
     /** @var string Профиль по-умолчанию */
-    private const DEFAULT_PROFILE = 'temp';
+    public const DEFAULT_PROFILE = 'temp';
 
     /**
      * Имя временной таблицы
@@ -51,13 +51,6 @@ class TempTableClickHouse
      * @var ClickHouse
      */
     private ClickHouse $_clickHouse;
-
-    /**
-     * Дескриптор этой временной таблицы.
-     *
-     * @var ClickHouseTableDescriptor
-     */
-    private ClickHouseTableDescriptor $_descriptor;
 
     /**
      * Структура таблицы
@@ -108,7 +101,6 @@ class TempTableClickHouse
         $prefix = Configure::read(self::TEMP_TABLE_PREFIX_SETTING) ?? self::DEFAULT_PREFIX;
         $this->_name = $prefix . ucfirst($name) . '_' . $date->format('ymdHis') . '_' . uniqid();
         $this->_clickHouse = ClickHouse::getInstance($profile);
-        $this->_descriptor = new ClickHouseTableDescriptor($this->_name, $profile, $profile);
 
         $this->_create($typeMap);
         $this->_fill($fillQuery, $bindings);
@@ -133,13 +125,13 @@ class TempTableClickHouse
     }
 
     /**
-     * Получение дескриптора этой временной таблицы.
+     * Получение части имени таблицы без префикса БД.
      *
-     * @return ClickHouseTableDescriptor
+     * @return string
      */
-    public function getDescriptor(): ClickHouseTableDescriptor
+    public function getNamePart(): string
     {
-        return $this->_descriptor;
+        return $this->_name;
     }
 
     /**

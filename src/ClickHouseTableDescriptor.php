@@ -21,6 +21,9 @@ class ClickHouseTableDescriptor
     /** @var string|null Название профиля для записи */
     private ?string $_writerProfile;
 
+    /** @var TempTableClickHouse|null Экземпляр мок-таблицы. */
+    private ?TempTableClickHouse $_mockTable;
+
     /** @var array<string, string>|null Схема таблицы ['имя поля' => 'тип'] */
     private ?array $_schema = null;
 
@@ -30,12 +33,14 @@ class ClickHouseTableDescriptor
      * @param string $name
      * @param string $readerProfile
      * @param string|null $writerProfile
+     * @param TempTableClickHouse|null $mockTable
      */
-    public function __construct(string $name, string $readerProfile, ?string $writerProfile = null)
+    public function __construct(string $name, string $readerProfile, ?string $writerProfile = null, ?TempTableClickHouse $mockTable = null)
     {
         $this->_name = $name;
         $this->_readerProfile = $readerProfile;
         $this->_writerProfile = $writerProfile;
+        $this->_mockTable = $mockTable;
     }
 
     /**
@@ -59,17 +64,37 @@ class ClickHouseTableDescriptor
     }
 
     /**
+     * Проверяет, задан-ли профиль для записи в таблицу.
+     *
+     * @return bool
+     */
+    public function hasWriter(): bool
+    {
+        return !is_null($this->_writerProfile);
+    }
+
+    /**
      * Возвращает экземпляр профиля для записи в таблицу.
      *
      * @return ClickHouse
      */
     public function getWriter(): ClickHouse
     {
-        if (is_null($this->_writerProfile)) {
+        if (!$this->hasWriter()) {
             throw new LogicException("Для таблицы {$this->_name} не задан профиль для записи.");
         }
 
         return ClickHouse::getInstance($this->_writerProfile);
+    }
+
+    /**
+     * Возвращает экземпляр мок-таблицы.
+     *
+     * @return TempTableClickHouse|null
+     */
+    public function getMockTable(): ?TempTableClickHouse
+    {
+        return $this->_mockTable;
     }
 
     /**

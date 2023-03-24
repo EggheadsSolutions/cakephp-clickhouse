@@ -53,8 +53,20 @@ abstract class AbstractClickHouseFixtureFactory
     {
         $tableManager = ClickHouseTableManager::getInstance();
         $table = $this->_getTable();
-        $tableName = $tableManager->getDescriptor($table, false)->getName();
-        $mockTable = new TempTableClickHouse($tableName, $table->getSchema());
+        $descriptor = $tableManager->getDescriptor($table);
+
+        $mockTable = $descriptor->getMockTable();
+        if (is_null($mockTable)) {
+            $mockProfile = TempTableClickHouse::DEFAULT_PROFILE;
+            $mockTable = new TempTableClickHouse($descriptor->getName(), $descriptor->getSchema(), '', [], $mockProfile);
+
+            $descriptorToSet = new ClickHouseTableDescriptor(
+                $mockTable->getNamePart(),
+                $mockProfile,
+                $descriptor->hasWriter() ? $mockProfile : null,
+                $mockTable,
+            );
+        }
 
         if (count($this->_items) > 0) {
             $transaction = $mockTable->createTransaction();
@@ -66,7 +78,9 @@ abstract class AbstractClickHouseFixtureFactory
             $transaction->commit();
         }
 
-        $tableManager->mock($table, $mockTable);
+        if (isset($descriptorToSet)) {
+            $tableManager->setDescriptor($table, $descriptorToSet);
+        }
 
         return $mockTable;
     }

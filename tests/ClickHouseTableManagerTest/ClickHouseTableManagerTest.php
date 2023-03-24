@@ -79,56 +79,32 @@ class ClickHouseTableManagerTest extends TestCase
     }
 
     /**
-     * Тестирование получения дескриптора таблицы, функционирования моков и их влияния на дескриптор таблицы.
+     * Тестирование получения автоматически-создаваемого дескриптора таблицы и функционирования таблиц-дублёров.
      *
      * @param bool $useDoubler
      * @param AbstractClickHouseTable $table
      * @param ClickHouseTableDescriptor $expectedDescriptor
      * @return void
-     * @dataProvider provideGetDescriptorAndMocksData
+     * @dataProvider provideGetDescriptorAndAutoInitData
      * @covers ClickHouseTableManager::getDescriptor
-     * @covers ClickHouseTableManager::mock
-     * @covers ClickHouseTableManager::isMocked
-     * @covers ClickHouseTableManager::getMockTable
-     * @covers ClickHouseTableManager::clearMocks
      */
-    public function testGetDescriptorAndMocks(bool $useDoubler, AbstractClickHouseTable $table, ClickHouseTableDescriptor $expectedDescriptor): void
+    public function testGetDescriptorAndAutoInit(bool $useDoubler, AbstractClickHouseTable $table, ClickHouseTableDescriptor $expectedDescriptor): void
     {
         Configure::write(ClickHouseTableManager::USE_DOUBLERS_CONFIG_KEY, $useDoubler);
         $tableManager = ClickHouseTableManager::getInstance();
 
-        // Проверяем, что таблица изначально не замокана, а также корректность получения дескриптора.
-        self::assertFalse($tableManager->isMocked($table));
+        $actualDescriptor = $tableManager->getDescriptor($table);
 
-        $unmockedDescriptor = $tableManager->getDescriptor($table, false);
-
-        self::assertEquals($expectedDescriptor, $unmockedDescriptor);
-        self::assertSame($unmockedDescriptor, $tableManager->getDescriptor($table));
-
-        // Проверяем замокивание таблицы, приводящее к подмене получаемого дескриптора.
-        $mockTable = TempTableClickHouse::createFromTable('someName', $table);
-        $tableManager->mock($table, $mockTable);
-
-        self::assertTrue($tableManager->isMocked($table));
-        self::assertSame($mockTable, $tableManager->getMockTable($table));
-        self::assertSame($mockTable->getDescriptor(), $tableManager->getDescriptor($table));
-        self::assertSame($unmockedDescriptor, $tableManager->getDescriptor($table, false));
-
-        // Проверяем размокивание таблиц, приводящее к восстановлению получаемого дескриптора до изначального.
-        $tableManager->clearMocks();
-
-        self::assertFalse($tableManager->isMocked($table));
-        self::assertNull($tableManager->getMockTable($table));
-        self::assertSame($unmockedDescriptor, $tableManager->getDescriptor($table));
-        self::assertSame($unmockedDescriptor, $tableManager->getDescriptor($table, false));
+        self::assertEquals($expectedDescriptor, $actualDescriptor);
+        self::assertSame($actualDescriptor, $tableManager->getDescriptor($table));
     }
 
     /**
-     * Предоставляет данные для тестирования получения дескриптора таблицы, функционирования моков и их влияния на дескриптор таблицы.
+     * Предоставляет данные для тестирования получения автоматически-создаваемого дескриптора таблицы и функционирования таблиц-дублёров.
      *
      * @return array<array{bool, AbstractClickHouseTable, ClickHouseTableDescriptor}>
      */
-    public function provideGetDescriptorAndMocksData(): array
+    public function provideGetDescriptorAndAutoInitData(): array
     {
         $readerProfile = 'default';
         $writerProfile = 'writer';
@@ -142,27 +118,27 @@ class ClickHouseTableManagerTest extends TestCase
             'Обычная таблица с объявленным в константе класса именем, нет профиля для записи' => [
                 false,
                 TestCustomClickHouseTable::getInstance(),
-                new ClickHouseTableDescriptor('testSimple', $readerProfile, null),
+                new ClickHouseTableDescriptor('testSimple', $readerProfile),
             ],
-            'Внешняя MySQL таблица, дублёры отключены' => [
+            'Внешняя MySQL таблица, дублёры отключены, есть профиль для записи' => [
                 false,
                 TestMysqlExternalClickHouseTable::getInstance(),
-                new ClickHouseTableDescriptor('testMysqlExternal', $readerProfile, $readerProfile),
+                new ClickHouseTableDescriptor('testMysqlExternal', $readerProfile, $writerProfile),
             ],
-            'Внешняя MySQL таблица, дублёры включены' => [
+            'Внешняя MySQL таблица, дублёры включены, есть профиль для записи' => [
                 true,
                 TestMysqlExternalClickHouseTable::getInstance(),
-                new ClickHouseTableDescriptor('fake_db_testMysqlExternal', $readerProfile, $readerProfile),
+                new ClickHouseTableDescriptor('fake_db_testMysqlExternal', $readerProfile, $writerProfile),
             ],
-            'Внешний MySQL словарь, дублёры отключены' => [
+            'Внешний MySQL словарь, дублёры отключены, нет профиля для записи' => [
                 false,
                 TestMysqlDictClickHouseTable::getInstance(),
-                new ClickHouseTableDescriptor('testMysqlDict', $readerProfile, $readerProfile),
+                new ClickHouseTableDescriptor('testMysqlDict', $readerProfile),
             ],
-            'Внешний MySQL словарь, дублёры включены' => [
+            'Внешний MySQL словарь, дублёры включены, нет профиля для записи' => [
                 true,
                 TestMysqlDictClickHouseTable::getInstance(),
-                new ClickHouseTableDescriptor('fake_db_testMysqlDict', $readerProfile, $readerProfile),
+                new ClickHouseTableDescriptor('fake_db_testMysqlDict', $readerProfile),
             ],
         ];
     }
@@ -182,10 +158,10 @@ class ClickHouseTableManagerTest extends TestCase
     }
 
     /**
-     * Тестирование получения дескриптора и создания таблицы-дублёра для внешней MySQL таблицы при включённом использовании таблиц-дублёров.
+     * Тестирование получения дескриптора, создания и пересоздания таблицы-дублёра для внешней MySQL таблицы при включённом использовании таблиц-дублёров.
      *
      * @return void
-     * @covers ClickHouseTableManager::getDescriptor()
+     * @covers ClickHouseTableManager::getDescriptor
      */
     public function testGetDescriptorAndEnabledDoublersUsingExternalMysqlTable(): void
     {
@@ -195,7 +171,7 @@ class ClickHouseTableManagerTest extends TestCase
         $reader = ClickHouse::getInstance($readerProfile);
         $table = TestMysqlExternalClickHouseTable::getInstance();
 
-        $expectedDescriptor = new ClickHouseTableDescriptor('fake_db_testMysqlExternal', $readerProfile, $readerProfile);
+        $expectedDescriptor = new ClickHouseTableDescriptor('fake_db_testMysqlExternal', $readerProfile, 'writer');
 
         // Проверяем дескриптор и впервые созданную таблицу-дублёр.
         self::assertEquals($expectedDescriptor, ClickHouseTableManager::getInstance()->getDescriptor($table));
@@ -236,10 +212,10 @@ class ClickHouseTableManagerTest extends TestCase
     }
 
     /**
-     * Тестирование получения дескриптора и создания таблицы-дублёра для внешнего MySQL словаря при включённом использовании таблиц-дублёров.
+     * Тестирование получения дескриптора, создания и пересоздания таблицы-дублёра для внешнего MySQL словаря при включённом использовании таблиц-дублёров.
      *
      * @return void
-     * @covers ClickHouseTableManager::getDescriptor()
+     * @covers ClickHouseTableManager::getDescriptor
      */
     public function testGetDescriptorAndEnabledDoublersUsingExternalMysqlDict(): void
     {
@@ -249,7 +225,7 @@ class ClickHouseTableManagerTest extends TestCase
         $reader = ClickHouse::getInstance($readerProfile);
         $table = TestMysqlDictClickHouseTable::getInstance();
 
-        $expectedDescriptor = new ClickHouseTableDescriptor('fake_db_testMysqlDict', $readerProfile, $readerProfile);
+        $expectedDescriptor = new ClickHouseTableDescriptor('fake_db_testMysqlDict', $readerProfile);
 
         // Проверяем дескриптор и впервые созданную таблицу-дублёр.
         self::assertEquals($expectedDescriptor, ClickHouseTableManager::getInstance()->getDescriptor($table));
@@ -302,7 +278,7 @@ class ClickHouseTableManagerTest extends TestCase
      * Тестирование получения дескриптора и отсутствие таблицы-дублёра для внешней MySQL таблицы при отключенном использовании таблиц-дублёров.
      *
      * @return void
-     * @covers ClickHouseTableManager::getDescriptor()
+     * @covers ClickHouseTableManager::getDescriptor
      */
     public function testGetDescriptorAndDisabledDoublersUsingExternalMysqlTable(): void
     {
@@ -312,7 +288,7 @@ class ClickHouseTableManagerTest extends TestCase
         $reader = ClickHouse::getInstance($readerProfile);
         $table = TestMysqlExternalClickHouseTable::getInstance();
 
-        $expectedDescriptor = new ClickHouseTableDescriptor('testMysqlExternal', $readerProfile, $readerProfile);
+        $expectedDescriptor = new ClickHouseTableDescriptor('testMysqlExternal', $readerProfile, 'writer');
 
         // Проверяем дескриптор и отсутствие таблицы-дублёра.
         self::assertEquals($expectedDescriptor, ClickHouseTableManager::getInstance()->getDescriptor($table));
@@ -323,7 +299,7 @@ class ClickHouseTableManagerTest extends TestCase
      * Тестирование получения дескриптора и отсутствие таблицы-дублёра для внешнего MySQL словаря при отключенном использовании таблиц-дублёров.
      *
      * @return void
-     * @covers ClickHouseTableManager::getDescriptor()
+     * @covers ClickHouseTableManager::getDescriptor
      */
     public function testGetDescriptorAndDisabledDoublersUsingExternalMysqlDict(): void
     {
@@ -333,10 +309,28 @@ class ClickHouseTableManagerTest extends TestCase
         $reader = ClickHouse::getInstance($readerProfile);
         $table = TestMysqlDictClickHouseTable::getInstance();
 
-        $expectedDescriptor = new ClickHouseTableDescriptor('testMysqlDict', $readerProfile, $readerProfile);
+        $expectedDescriptor = new ClickHouseTableDescriptor('testMysqlDict', $readerProfile);
 
         // Проверяем дескриптор и отсутствие таблицы-дублёра.
         self::assertEquals($expectedDescriptor, ClickHouseTableManager::getInstance()->getDescriptor($table));
         self::assertFalse($reader->isTableExist('default.fake_db_testMysqlDict'));
+    }
+
+    /**
+     * Тестирование назначения и получения назначенного дескриптора.
+     *
+     * @return void
+     * @covers ClickHouseTableManager::getDescriptor
+     * @covers ClickHouseTableManager::setDescriptor
+     */
+    public function testSetAndGetDescriptor(): void
+    {
+        $tableManager = ClickHouseTableManager::getInstance();
+        $table = TestCustomClickHouseTable::getInstance();
+        $descriptor = new ClickHouseTableDescriptor('someFakeName', 'default', 'ssdNode');
+
+        $tableManager->setDescriptor($table, $descriptor);
+
+        self::assertSame($descriptor, $tableManager->getDescriptor($table));
     }
 }
