@@ -3,33 +3,27 @@ declare(strict_types=1);
 
 namespace Eggheads\CakephpClickHouse\Tests\AbstractClickHouseTableTest;
 
-use Cake\Cache\Cache;
 use Cake\I18n\FrozenDate;
-use Cake\TestSuite\TestCase;
 use Eggheads\CakephpClickHouse\AbstractClickHouseTable;
 use Eggheads\CakephpClickHouse\ClickHouse;
-use Eggheads\CakephpClickHouse\ClickHouseMockCollection;
+use Eggheads\CakephpClickHouse\ClickHouseTableDescriptor;
 use Eggheads\CakephpClickHouse\ClickHouseTableInterface;
-use Eggheads\CakephpClickHouse\TempTableClickHouse;
+use Eggheads\CakephpClickHouse\ClickHouseTableManager;
+use Eggheads\CakephpClickHouse\Tests\TestCase;
 use Eggheads\Mocks\ConstantMocker;
 use Eggheads\Mocks\MethodMocker;
-use function PHPUnit\Framework\assertEquals;
 
 class TestClickHouseTableTest extends TestCase
 {
     /** Имя тестовой таблицы */
-    private const TABLE_NAME = 'test';
+    private const TABLE_NAME = 'default.test';
 
     /** @inerhitDoc */
     public function setUp(): void
     {
         parent::setUp();
 
-        $writer = ClickHouse::getInstance('writer');
-        $writerTableName = TestClickHouseTable::getInstance()->getTableName(false);
-
-        $writer->getClient()->write('DROP TABLE IF EXISTS {table}', ['table' => $writerTableName]);
-        $writer->getClient()->write(
+        ClickHouse::getInstance(TestClickHouseTable::WRITER_CONFIG)->getClient()->write(
             'CREATE TABLE {table}
             (
                 id      String,
@@ -38,11 +32,8 @@ class TestClickHouseTableTest extends TestCase
                 checkDate Date,
                 created DateTime
             ) ENGINE = MergeTree() ORDER BY id',
-            ['table' => $writerTableName]
+            ['table' => self::TABLE_NAME]
         );
-
-        Cache::disable();
-        ClickHouseMockCollection::clear();
     }
 
     /** @inheritDoc */
@@ -52,7 +43,12 @@ class TestClickHouseTableTest extends TestCase
 
         ConstantMocker::restore();
         MethodMocker::restore($this->hasFailed());
-        ClickHouseMockCollection::clear();
+    }
+
+    /** @inheritdoc */
+    protected function _dropClickHouseTables(): void
+    {
+        ClickHouse::getInstance(TestClickHouseTable::WRITER_CONFIG)->getClient()->write('DROP TABLE IF EXISTS {table}', ['table' => self::TABLE_NAME]);
     }
 
     /**
@@ -93,8 +89,7 @@ class TestClickHouseTableTest extends TestCase
         ];
         $testTable->insert($svData);
 
-        $selectAllQuery = 'SELECT * FROM ' . $testTable->getTableName();
-        self::assertEquals($svData, $testTable->select($selectAllQuery)->rows());
+        self::assertEquals($svData, $this->_getAllRows($testTable));
 
         self::assertEquals(1, $testTable->getTotal(FrozenDate::parse('2020-08-02')));
         self::assertTrue($testTable->hasData(FrozenDate::parse('2020-08-02')));
@@ -108,14 +103,14 @@ class TestClickHouseTableTest extends TestCase
 
         self::assertFalse($testTable->hasData(FrozenDate::parse('2016-08-02')));
 
-        assertEquals('2020-08-04', $testTable->getMaxDate('created')->toDateString());
+        self::assertEquals('2020-08-04', $testTable->getMaxDate('created')->toDateString());
 
         $testTable->deleteAll("id = :id", ['id' => '1']);
         sleep(1);
-        self::assertEquals([$svData[1]], $testTable->select($selectAllQuery)->rows());
+        self::assertEquals([$svData[1]], $this->_getAllRows($testTable));
 
         $testTable->truncate();
-        self::assertEmpty($testTable->select($selectAllQuery)->rows());
+        self::assertEmpty($this->_getAllRows($testTable));
     }
 
     /**
@@ -146,11 +141,9 @@ class TestClickHouseTableTest extends TestCase
         ];
         $testTable->insert($svData);
 
-        $selectAllQuery = 'SELECT * FROM ' . $testTable->getTableName();
-
-        self::assertNotEmpty($testTable->select($selectAllQuery)->rows());
+        self::assertNotEmpty($this->_getAllRows($testTable));
         $testTable->deleteAllSync("id > :aboveId", ['aboveId' => '0']);
-        self::assertEmpty($testTable->select($selectAllQuery)->rows());
+        self::assertEmpty($this->_getAllRows($testTable));
     }
 
     /**
@@ -161,60 +154,117 @@ class TestClickHouseTableTest extends TestCase
     public function testGetTableName(): void
     {
         $testTable = TestClickHouseTable::getInstance();
-        $testTableName = 'default.' . self::TABLE_NAME;
+        $testTableName = self::TABLE_NAME;
         self::assertEquals($testTableName, $testTable->getTableName());
 
-        $tempTable = TempTableClickHouse::createFromTable('clone', TestClickHouseTable::getInstance());
-        ClickHouseMockCollection::add(self::TABLE_NAME, $tempTable);
-        self::assertEquals($tempTable->getName(), $testTable->getTableName());
+        $fakeDescriptor = new ClickHouseTableDescriptor('someFakeName', 'default', 'writer');
+        ClickHouseTableManager::getInstance()->setDescriptor($testTable, $fakeDescriptor);
+        self::assertEquals('default.someFakeName', $testTable->getTableName());
+        self::assertEquals('default.someFakeName', $testTable->getTableName(false));
 
-        ClickHouseMockCollection::clear();
+        ClickHouseTableManager::clearInstance();
         self::assertEquals($testTableName, $testTable->getTableName());
     }
 
     /**
-     * @testdox Проверим создание и заполнение временной таблицы при использовании фикстур
+     * Проверим создание, заполнение и мутации таблицы при использовании фикстур
      *
      * @return void
+     * @covers AbstractClickHouseTable::getTableName
+     * @covers AbstractClickHouseTable::select
+     * @covers AbstractClickHouseTable::truncate
+     * @covers AbstractClickHouseTable::insert
+     * @covers AbstractClickHouseTable::deleteAll
+     * @covers AbstractClickHouseTable::createTransaction
      */
     public function testFixtureFactory(): void
     {
-        (new TestClickhouseFixtureFactory([['id' => 'id1', 'checkDate' => '2021-01-03',]], 2))->persist();
-
         $testTable = TestClickHouseTable::getInstance();
-        self::assertNotNull(ClickHouseMockCollection::getTableName(self::TABLE_NAME));
 
-        $statement = $testTable->select(
-            'SELECT * FROM {tableName} ORDER BY checkDate',
-            ['tableName' => $testTable->getTableName()]
-        );
-
-        self::assertEquals(
+        // Наполняем оригинальную таблицу данными для проверки, что мок не затрагивает её данные
+        $originalRows = [
             [
-                [
-                    'id' => 'id1',
-                    'url' => 'String',
-                    'data' => 10.2,
-                    'checkDate' => '2021-01-03',
-                    'created' => '2020-03-01 23:12:12',
-                ],
-                [
-                    'id' => 'String',
-                    'url' => 'String',
-                    'data' => 10.2,
-                    'checkDate' => '2022-01-03',
-                    'created' => '2020-03-01 23:12:12',
-                ],
-                [
-                    'id' => 'String',
-                    'url' => 'String',
-                    'data' => 10.2,
-                    'checkDate' => '2022-01-03',
-                    'created' => '2020-03-01 23:12:12',
-                ],
+                'id' => 'SomeOriginalId',
+                'url' => 'SomeOriginalUrl',
+                'data' => 17.3,
+                'checkDate' => '2023-01-01',
+                'created' => '2023-01-01 21:11:11',
             ],
-            $statement->rows()
-        );
+        ];
+        $testTable->insert($originalRows);
+
+        // Инициализируем фикстуру и проверяем корректность её инициализации
+        $mockTable = (new TestClickhouseFixtureFactory([['id' => 'id1', 'checkDate' => '2021-01-03',]], 2))->persist();
+
+        self::assertNotNull($mockTable);
+        self::assertSame($mockTable->getName(), $testTable->getTableName());
+        self::assertSame($mockTable->getName(), $testTable->getTableName(false));
+        self::assertSame([
+            [
+                'id' => 'id1',
+                'url' => 'String',
+                'data' => 10.2,
+                'checkDate' => '2021-01-03',
+                'created' => '2020-03-01 23:12:12',
+            ],
+            [
+                'id' => 'String',
+                'url' => 'String',
+                'data' => 10.2,
+                'checkDate' => '2022-01-03',
+                'created' => '2020-03-01 23:12:12',
+            ],
+            [
+                'id' => 'String',
+                'url' => 'String',
+                'data' => 10.2,
+                'checkDate' => '2022-01-03',
+                'created' => '2020-03-01 23:12:12',
+            ],
+        ], $this->_getAllRows($testTable));
+
+        // Проверяем очистку таблицы
+        $testTable->truncate();
+
+        self::assertEmpty($this->_getAllRows($testTable));
+
+        // Проверяем вставку в таблицу
+        $rowToInsert = [
+            'id' => 'SomeInsertId',
+            'url' => 'SomeInsertUrl',
+            'data' => 15.5,
+            'checkDate' => '2023-03-03',
+            'created' => '2023-03-03 23:33:33',
+        ];
+
+        $testTable->insert($rowToInsert);
+
+        self::assertSame([$rowToInsert], $this->_getAllRows($testTable));
+
+        // Проверяем удаление из таблицы
+        $testTable->deleteAll('TRUE');
+
+        self::assertEmpty($this->_getAllRows($testTable));
+
+        // Проверяем транзакции
+        $rowToAppend = [
+            'id' => 'SomeAppendId',
+            'url' => 'SomeAppendUrl',
+            'data' => 75.1,
+            'checkDate' => '2023-03-03',
+            'created' => '2023-03-03 23:33:33',
+        ];
+
+        $transaction = $testTable->createTransaction();
+        $transaction->append($rowToAppend);
+        $transaction->commit();
+
+        self::assertSame([$rowToAppend], $this->_getAllRows($testTable));
+
+        // Проверяем, что мок не затронул данные оригинальной таблицы.
+        ClickHouseTableManager::clearInstance();
+
+        self::assertSame($originalRows, $this->_getAllRows($testTable));
     }
 
     /**
@@ -285,5 +335,16 @@ class TestClickHouseTableTest extends TestCase
             'hasMutations * 4' => [4],
             'hasMutations * 0' => [0],
         ];
+    }
+
+    /**
+     * Получение всех строк таблицы.
+     *
+     * @param AbstractClickHouseTable $table
+     * @return mixed[]
+     */
+    private function _getAllRows(AbstractClickHouseTable $table): array
+    {
+        return $table->select("SELECT * FROM {table}", ['table' => $table->getTableName()])->rows();
     }
 }

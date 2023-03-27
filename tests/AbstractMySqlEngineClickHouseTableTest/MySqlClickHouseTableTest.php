@@ -3,36 +3,31 @@ declare(strict_types=1);
 
 namespace Eggheads\CakephpClickHouse\Tests\AbstractMySqlEngineClickHouseTableTest;
 
-use Cake\Cache\Cache;
 use Cake\Core\Configure;
-use Cake\Datasource\ConnectionManager;
-use Cake\TestSuite\TestCase;
-use Eggheads\CakephpClickHouse\AbstractClickHouseTable;
 use Eggheads\CakephpClickHouse\ClickHouse;
-use Eggheads\Mocks\PropertyAccess;
-use ReflectionException;
+use Eggheads\CakephpClickHouse\ClickHouseTableManager;
+use Eggheads\CakephpClickHouse\Tests\TestCase;
 
 class MySqlClickHouseTableTest extends TestCase
 {
     /** @inheritdoc */
-    public function setUp(): void
+    protected function _dropClickHouseTables(bool $dropTables = true): void
     {
-        parent::setUp();
-        Cache::disable();
+        $writerClient = ClickHouse::getInstance()->getClient();
+        $writerClient->write('DROP TABLE IF EXISTS default.fake_db_testMySqlEngine');
+        $writerClient->write('DROP TABLE IF EXISTS default.testMySqlEngine');
     }
 
     /**
      * Тестируем подмену таблицы
      *
      * @return void
-     * @throws ReflectionException
      */
     public function test(): void
     {
         // Создадим тестовую таблицу
-        $testTableName = 'testMySqlEngine';
+        $testTableName = 'default.testMySqlEngine';
         $writer = ClickHouse::getInstance();
-        $writer->getClient()->write('DROP TABLE IF EXISTS {table}', ['table' => $testTableName]);
         $writer->getClient()->write(
             "CREATE TABLE {table}
                  (
@@ -44,37 +39,29 @@ class MySqlClickHouseTableTest extends TestCase
         );
 
         // При выключенном моке
-        Configure::write('mockClickHouseDictionary', false);
-        self::assertEquals('default.testMySqlEngine', TestMySqlEngineClickHouseTable::getInstance()->getTableName());
+        Configure::write(ClickHouseTableManager::USE_DOUBLERS_CONFIG_KEY, false);
+        self::assertEquals($testTableName, TestMySqlEngineClickHouseTable::getInstance()->getTableName());
 
-        // Чистим инстансы
-        PropertyAccess::setStatic(AbstractClickHouseTable::class, '_instances', []);
+        // Чистим инстансы и кэш
+        $this->_clearClickHouseTablesInfo();
 
         // При включенном моке
-        Configure::write('mockClickHouseDictionary', true);
-
-        PropertyAccess::setStatic(ConnectionManager::class, '_config', []);
-        ConnectionManager::setConfig('default', [
-            'database' => 'mock_db',
-            'port' => '3306',
-            'username' => 'mock_user',
-            'password' => 'mock_password',
-            'host' => 'mock_host',
-        ]);
+        Configure::write(ClickHouseTableManager::USE_DOUBLERS_CONFIG_KEY, true);
 
         $mockTable = TestMySqlEngineClickHouseTable::getInstance();
-        self::assertEquals('default.mock_db_testMySqlEngine', $mockTable->getTableName()); // Имя таблицы подменилось
+        self::assertEquals('default.fake_db_testMySqlEngine', $mockTable->getTableName()); // Имя таблицы подменилось
         $createStatement = $mockTable->select('SHOW CREATE TABLE {table}', ['table' => $mockTable->getTableName()])
             ->fetchOne('statement');
 
-        self::assertStringContainsString('CREATE TABLE default.mock_db_testMySqlEngine', $createStatement);
-        self::assertStringContainsString("MySQL('mock_host:3306', 'mock_db', 'test_table_name', 'mock_user', 'mock_password')", $createStatement);
+        self::assertStringContainsString('CREATE TABLE default.fake_db_testMySqlEngine', $createStatement);
+        self::assertStringContainsString("MySQL('fake_host:3306', 'fake_db', 'test_table_name', 'fake_user', 'fake_password')", $createStatement);
 
         $schema = $mockTable->getSchema();
         self::assertEquals(['id' => 'UInt32'], $schema); // Проверили, что скопировал схему
 
-        // Чистим инстансы и меняем структуру таблицы
-        PropertyAccess::setStatic(AbstractClickHouseTable::class, '_instances', []);
+        // Чистим инстансы и кэш, затем меняем структуру таблицы
+        $this->_clearClickHouseTablesInfo();
+
         $writer->getClient()->write('DROP TABLE IF EXISTS {table}', ['table' => $testTableName]);
         $writer->getClient()->write(
             "CREATE TABLE {table}
@@ -93,9 +80,5 @@ class MySqlClickHouseTableTest extends TestCase
             'id' => 'UInt32',
             'new' => 'UInt8',
         ], $schema); // Проверили, что таблица пересоздалась с новой схемой
-
-        // Чистим за собой
-        $writer->getClient()->write('DROP TABLE IF EXISTS {table}', ['table' => $testTableName]);
-        $writer->getClient()->write('DROP TABLE IF EXISTS {table}', ['table' => $mockTable->getTableName()]);
     }
 }

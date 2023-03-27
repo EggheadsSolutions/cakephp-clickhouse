@@ -36,7 +36,7 @@ class TempTableClickHouse
     private const TEMP_TABLE_PREFIX_SETTING = 'tempTableClickHousePrefix';
 
     /** @var string Профиль по-умолчанию */
-    private const DEFAULT_PROFILE = 'temp';
+    public const DEFAULT_PROFILE = 'temp';
 
     /**
      * Имя временной таблицы
@@ -99,7 +99,7 @@ class TempTableClickHouse
         $date = FrozenTime::now();
 
         $prefix = Configure::read(self::TEMP_TABLE_PREFIX_SETTING) ?? self::DEFAULT_PREFIX;
-        $this->_name = $prefix . ucfirst($name) . '_' . $date->format('ymdHis') . '_' . $date->microsecond;
+        $this->_name = $prefix . ucfirst($name) . '_' . $date->format('ymdHis') . '_' . uniqid();
         $this->_clickHouse = ClickHouse::getInstance($profile);
 
         $this->_create($typeMap);
@@ -115,13 +115,23 @@ class TempTableClickHouse
     }
 
     /**
-     * Получаем имя
+     * Получаем полное имя таблицы с префиксом БД
      *
      * @return string
      */
     public function getName(): string
     {
         return $this->_clickHouse->getClient()->settings()->getDatabase() . '.' . $this->_name;
+    }
+
+    /**
+     * Получение части имени таблицы без префикса БД.
+     *
+     * @return string
+     */
+    public function getNamePart(): string
+    {
+        return $this->_name;
     }
 
     /**
