@@ -119,7 +119,7 @@ class ClickHouseTableManager
     {
         $readerProfile = $table::READER_CONFIG;
 
-        if ($table instanceof AbstractExternalSourceClickHouseTable
+        if ($table instanceof ExternalSourceClickHouseTableInterface
             && Configure::read(self::USE_DOUBLERS_CONFIG_KEY) && !(defined('TEST_MODE') && TEST_MODE)
         ) {
             $name = $this->_initDoubler($table, $name, $readerProfile);
@@ -131,12 +131,12 @@ class ClickHouseTableManager
     /**
      * Инициализация таблицы-дублёра.
      *
-     * @param AbstractExternalSourceClickHouseTable $table
+     * @param ExternalSourceClickHouseTableInterface $table
      * @param string $originalName
      * @param string $readerProfile
      * @return string Имя инициализированной таблицы-дублёра.
      */
-    private function _initDoubler(AbstractExternalSourceClickHouseTable $table, string $originalName, string $readerProfile): string
+    private function _initDoubler(ExternalSourceClickHouseTableInterface $table, string $originalName, string $readerProfile): string
     {
         $reader = ClickHouse::getInstance($readerProfile);
         $readerClient = $reader->getClient();

@@ -6,7 +6,7 @@ namespace Eggheads\CakephpClickHouse;
 use Eggheads\CakephpClickHouse\Entity\MySqlCredentialsItem;
 use LogicException;
 
-class AbstractMySqlEngineClickHouseTable extends AbstractExternalSourceClickHouseTable
+class AbstractMySqlEngineClickHouseTable extends AbstractClickHouseTable implements ExternalSourceClickHouseTableInterface
 {
     /** @inheritdoc */
     public function makeCreateDoublerStatement(string $statement, string $mockTableName, MySqlCredentialsItem $credentialsItem): string

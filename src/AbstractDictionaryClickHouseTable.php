@@ -6,7 +6,7 @@ namespace Eggheads\CakephpClickHouse;
 use Eggheads\CakephpClickHouse\Entity\MySqlCredentialsItem;
 use LogicException;
 
-abstract class AbstractDictionaryClickHouseTable extends AbstractExternalSourceClickHouseTable
+abstract class AbstractDictionaryClickHouseTable extends AbstractClickHouseTable implements ExternalSourceClickHouseTableInterface
 {
     /**
      * Пересобирает справочник

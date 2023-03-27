@@ -5,7 +5,7 @@ namespace Eggheads\CakephpClickHouse;
 
 use Eggheads\CakephpClickHouse\Entity\MySqlCredentialsItem;
 
-abstract class AbstractExternalSourceClickHouseTable extends AbstractClickHouseTable
+interface ExternalSourceClickHouseTableInterface
 {
     /**
      * Получить выражение для создания таблицы-дублёра
@@ -15,7 +15,7 @@ abstract class AbstractExternalSourceClickHouseTable extends AbstractClickHouseT
      * @param MySqlCredentialsItem $credentialsItem
      * @return string
      */
-    abstract public function makeCreateDoublerStatement(string $statement, string $mockTableName, MySqlCredentialsItem $credentialsItem): string;
+    public function makeCreateDoublerStatement(string $statement, string $mockTableName, MySqlCredentialsItem $credentialsItem): string;
 
     /**
      * Получить выражение для удаления таблицы-дублёра
@@ -23,5 +23,5 @@ abstract class AbstractExternalSourceClickHouseTable extends AbstractClickHouseT
      * @param string $doublerFullName
      * @return string
      */
-    abstract public function makeDropDoublerStatement(string $doublerFullName): string;
+    public function makeDropDoublerStatement(string $doublerFullName): string;
 }
