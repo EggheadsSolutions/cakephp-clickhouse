@@ -9,7 +9,7 @@ env:
 jobs:
   sync_gitlab:
     name: 'Sync GtiLab'
-    runs-on: [self-hosted, code]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
