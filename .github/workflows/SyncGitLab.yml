@@ -1,0 +1,22 @@
+---
+
+name: 'Sync GtiLab'
+on: [push]
+
+env:
+  GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+
+jobs:
+  sync_gitlab:
+    name: 'Sync GtiLab'
+    runs-on: [self-hosted, code]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: 'Push To Gitlab'
+        run: |
+          branch_name=$(git rev-parse --abbrev-ref HEAD)
+          git remote set-url origin "https://mirror:${{  env.GITLAB_TOKEN  }}@gitlab.eggheads.solutions/eggheadssolutions/cakephp-clickhouse.git"
+          git push origin $branch_name
