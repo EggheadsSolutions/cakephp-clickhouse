@@ -90,7 +90,7 @@ class ClickHouseTransaction implements Countable
     /**
      * Добавляем данные в виде ассоциативного массива
      *
-     * @param array<string,string|int|float|string[]|int[]|float[]|null> $data
+     * @param array<string,string|int|float|bool|string[]|int[]|float[]|null> $data
      * @throws FieldNotFoundException
      * @throws LogicException
      */
