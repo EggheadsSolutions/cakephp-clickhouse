@@ -42,6 +42,9 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     /** @var string Разделитель имени таблицы и базы данных */
     public const TABLE_NAME_DELIMITER = '.';
 
+    /** @var string Квантиль отсутствующего значения */
+    private const EMPTY_QUANTILE = 'nan';
+
     /**
      * Объект-одиночка
      *
@@ -287,11 +290,13 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
         $delta = 1 / $chunksCount;
         $result = [];
         for ($quantile = $delta; 1 - $quantile > 0.001; $quantile += $delta) {
-            $result[] = (string)$this->select($sql, $bindings + [
+            $qString = (string)$this->select($sql, $bindings + [
                     'table' => $this->getTableName(),
                     'field' => $field,
                     'quantile' => $quantile,
                 ])->fetchOne('quantile');
+
+            $result[] = $qString !== self::EMPTY_QUANTILE ? $qString : '';
         }
         return $result;
     }
