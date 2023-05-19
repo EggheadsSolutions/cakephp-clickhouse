@@ -19,4 +19,4 @@ jobs:
         run: |
           branch_name=$(git rev-parse --abbrev-ref HEAD)
           git remote set-url origin "https://mirror:${{  env.GITLAB_TOKEN  }}@gitlab.eggheads.solutions/eggheadssolutions/cakephp-clickhouse.git"
-          git push origin $branch_name
+          git push --force origin $branch_name && exit_status=$? || exit_status=$?
