@@ -39,14 +39,33 @@ interface ClickHouseTableInterface
     public function getSchema(): array;
 
     /**
-     * Ищем данные из общей базы кластера
+     * Получаем SQL запрос на создание таблицы
+     *
+     * @param bool|null $isReaderConfig
+     * @return string
+     */
+    public function getCreateSQL(?bool $isReaderConfig = true): string;
+
+    /**
+     * Выбираем данные
      *
      * @param string $query
      * @param array<string,string|int|float|string[]|int[]|float[]> $bindings
+     * @param ?bool $isReaderConfig
      *
      * @return Statement
      */
-    public function select(string $query, array $bindings = []): Statement;
+    public function select(string $query, array $bindings = [], ?bool $isReaderConfig = true): Statement;
+
+    /**
+     * Пишем данные
+     *
+     * @param string $query
+     * @param array $bindings
+     * @param bool|null $isWriterConfig
+     * @return Statement
+     */
+    public function write(string $query, array $bindings = [], ?bool $isWriterConfig = true): Statement;
 
     /**
      * Проверяем варианты сортировки
