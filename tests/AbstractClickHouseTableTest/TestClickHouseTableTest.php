@@ -337,6 +337,27 @@ class TestClickHouseTableTest extends TestCase
         ];
     }
 
+    /** Получаем SQL запрос на создание таблицы */
+    public function testGetCreateSQL(): void
+    {
+        $testTable = TestClickHouseTable::getInstance();
+
+        $expSchema = "CREATE TABLE default.test
+(
+    `id` String,
+    `url` String,
+    `data` Decimal(10, 2),
+    `checkDate` Date,
+    `created` DateTime
+)
+ENGINE = MergeTree
+ORDER BY id
+SETTINGS index_granularity = 8192";
+
+        self::assertEquals($expSchema, $testTable->getCreateSQL());
+        self::assertEquals($expSchema, $testTable->getCreateSQL(false));
+    }
+
     /**
      * Получение всех строк таблицы.
      *

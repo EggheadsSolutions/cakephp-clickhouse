@@ -106,9 +106,32 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     }
 
     /** @inheritdoc */
-    public function select(string $query, array $bindings = []): Statement
+    public function getCreateSQL(?bool $isReaderConfig = true): string
     {
-        return $this->_getReader()->select($query, $bindings);
+        $descriptor = $this->_getDescriptor();
+        $clickHouse = $isReaderConfig ? $descriptor->getReader() : $descriptor->getWriter();
+
+        return $clickHouse->select('SHOW CREATE TABLE {me}', ['me' => $this->getTableName($isReaderConfig)])->fetchOne('statement');
+    }
+
+    /** @inheritdoc */
+    public function select(string $query, array $bindings = [], ?bool $isReaderConfig = true): Statement
+    {
+        if ($isReaderConfig) {
+            return $this->_getReader()->select($query, $bindings);
+        } else {
+            return $this->_getWriter()->select($query, $bindings);
+        }
+    }
+
+    /** @inheritdoc */
+    public function write(string $query, array $bindings = [], ?bool $isWriterConfig = true): Statement
+    {
+        if ($isWriterConfig) {
+            return $this->_getWriter()->getClient()->write($query, $bindings);
+        } else {
+            return $this->_getReader()->getClient()->write($query, $bindings);
+        }
     }
 
     /**
@@ -160,13 +183,13 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     /** @inheritdoc */
     public function truncate(): void
     {
-        $this->_getWriter()->getClient()->write('TRUNCATE TABLE ' . $this->_getNamePart());
+        $this->write('TRUNCATE TABLE ' . $this->_getNamePart());
     }
 
     /** @inheritdoc */
     public function deleteAll(string $conditions, array $bindings = []): void
     {
-        $this->_getWriter()->getClient()->write('ALTER TABLE ' . $this->_getNamePart() . ' DELETE WHERE ' . $conditions, $bindings);
+        $this->write('ALTER TABLE ' . $this->_getNamePart() . ' DELETE WHERE ' . $conditions, $bindings);
     }
 
     /** @inheritdoc */
@@ -179,7 +202,7 @@ abstract class AbstractClickHouseTable implements ClickHouseTableInterface
     /** @inheritdoc */
     public function optimize(): void
     {
-        $this->_getWriter()->getClient()->write('OPTIMIZE TABLE {me}', ['me' => $this->_getNamePart()]);
+        $this->write('OPTIMIZE TABLE {me}', ['me' => $this->_getNamePart()]);
     }
 
     /** @inheritdoc */
