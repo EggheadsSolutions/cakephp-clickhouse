@@ -61,7 +61,7 @@ interface ClickHouseTableInterface
      * Пишем данные
      *
      * @param string $query
-     * @param array $bindings
+     * @param array<string,string|int|float|string[]|int[]|float[]> $bindings
      * @param bool|null $isWriterConfig
      * @return Statement
      */
