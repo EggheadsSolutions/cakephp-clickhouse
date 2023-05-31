@@ -18,11 +18,11 @@
   "repositories": [
     {
       "type": "vcs",
-      "url": "git://github.com/EggheadsSolutions/eggheads-code-style"
+      "url": "https://gitlab.eggheads.solutions/eggheadssolutions/backend/library/eggheads-code-style.git"
     },
     {
       "type": "vcs",
-      "url": "git@github.com:EggheadsSolutions/runkit-test-mocks.git"
+      "url": "https://gitlab.eggheads.solutions/eggheadssolutions/backend/library/runkit-test-mocks.git"
     }
   ],
   "require": {
